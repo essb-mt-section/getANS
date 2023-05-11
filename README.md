@@ -61,8 +61,8 @@ https://ans.app/users/tokens
 
 1) Initiate new database:
         `--new mydatabase` and follow instructions
-2) Download grades  (responses):
-        `mydatabase --responses`
+2) Download grades  (results):
+        `mydatabase --results`
 3) Download all questions (exercises):
         `mydatabase --exercises` (that might take a while!)
 4) Show assignment overview:
