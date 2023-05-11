@@ -1,6 +1,8 @@
 import os
 from pyans import AssignmentDB, load_db
 
+# to set access token run: python -m pyans.cli --token
+
 database_name = "fswp_21-22.ansdb"
 
 # setup new database, if it does not exist, otherwise load
