@@ -47,7 +47,7 @@ Show / Export:
   --courses, -c         list all courses
   --grades, -g          list all grades
   --assignments, -a     overview all assignments
-  --file [EXCEL_FILE], -s [EXCEL_FILE]
+  --file [EXCEL_FILE], -f [EXCEL_FILE]
                         export what is shown to excel
 
 Version 0.7, (c) Oliver Lindemann
