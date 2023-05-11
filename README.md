@@ -22,7 +22,7 @@ Python 3.8+ and the following libraries (see [requirements.txt](requirements.txt
 call: `python ans_cli.py`
 
 ```
-usage: ans_cli.py [-h] [--usage] [--token] [--new [DATABASE_NAME]] [--exercises] [--responses] [--submissions] [--courses] [--grades] [--assignments]
+usage: ans_cli.py [-h] [--usage] [--token] [--new [DATABASE_NAME]] [--exercises] [--results] [--submissions] [--courses] [--grades] [--assignments]
                   [--file [EXCEL_FILE]]
                   [DATABASE]
 
@@ -39,7 +39,7 @@ options:
 Retrieve / Download:
   --new [DATABASE_NAME], -n [DATABASE_NAME]
                         initiate new database
-  --responses           retrieve responses
+  --results             retrieve results
   --exercises           retrieve exercises & questions
   --submissions         retrieve submissions
 
