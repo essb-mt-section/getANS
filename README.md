@@ -45,17 +45,17 @@ Retrieve / Download:
 
 Show / Export:
   --courses, -c         list all courses
-  --grades, -r         list all grades
+  --grades, -r          list all grades
   --assignments, -a     overview all assignments
   --file [EXCEL_FILE], -s [EXCEL_FILE]
-                        export to excel file
+                        export what is current shown to excel
 
 Version 0.7, (c) Oliver Lindemann
 ```
 
 ## Typical workflow
 
-Ensure that you have set a access token. (for more information call '--token')
+Ensure that you have set an access token (for more information call '--token').
 
 1) Initiate new database:
         `--new mydatabase` and follow instructions
@@ -68,6 +68,6 @@ Ensure that you have set a access token. (for more information call '--token')
 5) Show grades:
         `mydatabase -r`
 
-    To save assignment overview or grades just append `--file myexcelfile.xlsx`
+    To save assignments, courses or grades append `--file myexcelfile.xlsx` to a show command
 
 
