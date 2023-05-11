@@ -75,6 +75,6 @@ Ensure that you have set an access token (for more information call '--token').
 
 ## PyANS Python library
 
-API documentation is work in progress. Sorry!
+API documentation is work in progress
 
 see demo script [pyans_demo.py](pyans_demo.py)
