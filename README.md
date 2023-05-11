@@ -45,7 +45,7 @@ Retrieve / Download:
 
 Show / Export:
   --courses, -c         list all courses
-  --grades, -r          list all grades
+  --grades, -g          list all grades
   --assignments, -a     overview all assignments
   --file [EXCEL_FILE], -s [EXCEL_FILE]
                         export what is shown to excel
