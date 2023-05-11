@@ -55,7 +55,9 @@ Version 0.7, (c) Oliver Lindemann
 
 ### Typical workflow
 
-Ensure that you have set an access token (for more information call '--token').
+Ensure that you have set an access token (call '--token'). A new token can be generated via the ANS website:
+https://ans.app/users/tokens
+
 
 1) Initiate new database:
         `--new mydatabase` and follow instructions
