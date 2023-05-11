@@ -80,6 +80,8 @@ class AssignmentDB(object):
 
         n_resp = 0
         n_submissions = 0
+        n_exercises = 0
+        n_questions = 0
         n_answer_details = 0
         for ass in self._assignments:
             if ass.results is not None:
@@ -91,8 +93,15 @@ class AssignmentDB(object):
                             #if s.scores is not None:
                             #    n_answer_details += 1
 
+                for ex in ass.exercises:
+                    n_exercises += 1
+                    n_questions += len(ex.questions)
+
+
         d = {"assignments": len(self._assignments),
              "responses": n_resp,
+             "exercises": n_exercises,
+             "questions": n_questions,
              "submissions": n_submissions,
              #"answer details": n_answer_details
              }

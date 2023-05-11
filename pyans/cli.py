@@ -23,7 +23,8 @@ Typical workflow:
 5) Show grades:
         `mydatabase -r`
 
-   To save assignment overview or grades just append `--file myexcelfile.xlsx`
+   To save assignments, courses or grades add `--file myexcelfile.xlsx`
+   to a show command
 
 """
 
@@ -67,9 +68,8 @@ Typical workflow:
     group2.add_argument("--assignments", "-a", action="store_true", default=False,
                     help="overview assignments")
 
-
     group2.add_argument("--file", "-s", nargs='?', metavar="EXCEL_FILE", default="",
-            help="export to excel file")
+            help="export what is shown to excel")
 
 
     args = vars(parser.parse_args())
@@ -129,8 +129,6 @@ Typical workflow:
             print(f"saved: {outfile}")
     else:
         print(db.overview())
-
-
 
 
 def new_database(database):

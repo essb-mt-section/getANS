@@ -48,12 +48,12 @@ Show / Export:
   --grades, -r          list all grades
   --assignments, -a     overview all assignments
   --file [EXCEL_FILE], -s [EXCEL_FILE]
-                        export what is current shown to excel
+                        export what is shown to excel
 
 Version 0.7, (c) Oliver Lindemann
 ```
 
-## Typical workflow
+### Typical workflow
 
 Ensure that you have set an access token (for more information call '--token').
 
@@ -68,6 +68,13 @@ Ensure that you have set an access token (for more information call '--token').
 5) Show grades:
         `mydatabase -r`
 
-    To save assignments, courses or grades append `--file myexcelfile.xlsx` to a show command
+   To save assignments, courses or grades add `--file myexcelfile.xlsx`
+   to a show command
 
+---
 
+## PyANS Python library
+
+API documentation is work in progress. Sorry!
+
+see demo script [pyans_demo.py](pyans_demo.py)
