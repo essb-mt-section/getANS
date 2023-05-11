@@ -1,0 +1,51 @@
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+__pycache__
+
+# vim files
+*.swp
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+
+# PyCharm
+.idea
+
+# PyPi
+.pypirc
+
+_build/
+venv/
+*.db
+*.json
+*.xls*
+*.pickle
+*.csv
+*.Rproj
+*.Rhistory
+.Rproj.user
+*.feather
+*.ansdb
+
+test*
