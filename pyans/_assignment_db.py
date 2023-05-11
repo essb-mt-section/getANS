@@ -11,7 +11,7 @@ import pandas as pd
 
 from ._ans_api import ANSApi
 from ._misc import print_feedback
-from .types import Assignment
+from .types import Assignment, Course
 
 api = ANSApi() # global API instance
 
@@ -19,9 +19,10 @@ class AssignmentDB(object):
 
     DB_SUFFIX = ".ansdb"
 
-    def __init__(self):
+    def __init__(self, info=""):
         self.filename = None
         self._assignments = []
+        self.info = info
 
     @property
     def assignments(self) -> List[Assignment]:
@@ -34,11 +35,37 @@ class AssignmentDB(object):
     def dataframe(self, raw_dict:bool=False) -> pd.DataFrame:
         tmp = []
         for ass in self._assignments:
-            df = ass.dataframe(raw_dict=raw_dict)
+            df = ass.dataframe(raw_ans_data=raw_dict)
             tmp.append(df)
         rtn = pd.concat(tmp)
         rtn = rtn.reset_index()
         return rtn
+
+    def course_overview_all(self):
+        return self.course_overview("FSWP2-032-A")
+
+    def course_overview(self, course_code):
+        for ass in self.assignments:
+            code, name, instr = ass.course_info()
+            if code == course_code:
+                pass
+
+
+    def course_list_df(self):
+        names = []
+        codes = []
+
+        for ass in self._assignments:
+            if isinstance(ass.course, Course):
+                code = ass.course.course_code
+                name = ass.course.name
+                if code not in codes:
+                    codes.append(code)
+                    names.append(name)
+
+        return pd.DataFrame({"code": codes,
+                             "name": names})
+
 
     def results_df(self, raw_ans_data:bool=False) -> pd.DataFrame:
         tmp = []
@@ -47,6 +74,16 @@ class AssignmentDB(object):
             tmp.append(df)
         rtn = pd.concat(tmp)
         rtn = rtn.reset_index()
+        return rtn
+
+    def assignments_df(self, raw_ans_data:bool=False) -> pd.DataFrame:
+        tmp = []
+        for ass in self._assignments:
+            df = ass.dataframe(raw_ans_data=raw_ans_data)
+            tmp.append(df)
+        rtn = pd.concat(tmp)
+        rtn = rtn.reset_index().drop(columns=["index"])
+
         return rtn
 
     def overview(self):
@@ -61,13 +98,14 @@ class AssignmentDB(object):
                     if r.submissions is not None:
                         for s in r.submissions:
                             n_submissions += 1
-                            if s.scores is not None:
-                                n_answer_details += 1
+                            #if s.scores is not None:
+                            #    n_answer_details += 1
 
         d = {"assignments": len(self._assignments),
              "responses": n_resp,
              "submissions": n_submissions,
-             "answer details": n_answer_details}
+             #"answer details": n_answer_details
+             }
 
         return pd.DataFrame({"types": d.keys(), "n": d.values()})
 
@@ -138,7 +176,7 @@ class AssignmentDB(object):
 
     def retrieve(self,
                 results = False,
-                questions = False,
+                exercises = False,
                 submissions=False,
                 answer_details=False,
                 force_update = False,
@@ -152,7 +190,7 @@ class AssignmentDB(object):
                                      force_update=force_update)
             self.save()
 
-        if questions:
+        if exercises:
             api.download_exercises_and_questions(self._assignments,
                                                      force_update=force_update)
             self.save()

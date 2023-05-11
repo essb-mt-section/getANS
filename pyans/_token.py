@@ -6,6 +6,12 @@ FILE = os.path.join(DIR, "token")
 
 NO_TOKEN_ERROR_MSG = f"No ANS token found. Set token file via token.set() [or cli()] and call api_init_token(). Alternatively, call cli via command line 'python -m pyans.token'"
 
+INFO="""
+Accessing ANS with PyANS requires authorization via an access token. Please copy
+and paste your token below.  A new token can be generated via the ANS website:
+https://ans.app/users/tokens
+"""
+
 def set(token):
     try:
         os.mkdir(DIR)
@@ -13,7 +19,7 @@ def set(token):
         pass
     token = token.strip()
     if len(token) == 0:
-        print("Remove {}".format(FILE))
+        print(f"Remove {FILE}")
         os.remove(FILE)
     else:
         with open(FILE, "w") as fl:
@@ -27,23 +33,20 @@ def read():
         raise RuntimeError(NO_TOKEN_ERROR_MSG)
 
 
-def cli():
+def token_cli():
+    print(INFO)
     try:
         t = read()
     except RuntimeError:
         t = None
     if t is None:
         wording = "set"
-        print("Token file: {}".format(FILE))
+        print(f"Token file: '{t}'")
     else:
         wording = "reset"
-        print("Current token: '{}'".format(t))
+        print(f"Current token: '{t}'")
 
-    r = input("Do you want to {} the ANS token? (y/N) ".format(wording))
+    r = input(f"Do you want to {wording} ANS token? (y/N) ")
     if r.lower() == "yes" or r.lower() == "y":
         set(token=input("Token: "))
-        print("")
-        cli()
-
-if __name__ == "__main__":
-    cli()
+        print(f"\nNew token: '{t}'")

@@ -25,3 +25,4 @@ def make_date(data_str:str) -> datetime.date:
         except ValueError as err:
             if len(formats) == 0:
                 raise err
+

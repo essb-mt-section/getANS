@@ -1,9 +1,9 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
 
-from ._list_of_dicts import dataframe_from_list_of_dict
+from .list_of_dicts import dataframe_from_list_of_dict
 
 FIRST_OPTION_CORRECT = ord("A")
 FIRST_OPTION_INCORRECT = ord("a")
@@ -79,7 +79,7 @@ class Exercise(ANSObject):
 class Course(ANSObject):
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str:
         return self._dict["name"]
 
     @property
@@ -87,7 +87,7 @@ class Course(ANSObject):
         return int(self._dict["year"])
 
     @property
-    def course_code(self) -> Optional[str]:
+    def course_code(self) -> str:
         return self._dict["course_code"]
 
     @property
@@ -96,6 +96,15 @@ class Course(ANSObject):
         for i in self._dict["instructors"]:
             instr.append(i["first_name"] + " " + i["last_name"])
         return instr
+
+    @property
+    def all_instructors(self) -> str:
+        rtn = ""
+        for i in self._dict["instructors"]:
+            rtn = rtn + i["last_name"] + ", "
+        if len(rtn):
+            rtn = rtn[:-2]
+        return rtn
 
     @property
     def instructor_ids(self) -> Optional[list]:
@@ -115,16 +124,16 @@ class Submission(ANSObject):
     def score(self) -> Optional[float]:
         try:
             return float(self._dict["score"])
-        except (KeyError, ValueError):
+        except (KeyError, ValueError, TypeError):
             return None
 
-    def contains_all_scores(self) -> bool:
+    def contains_all_choices(self) -> bool:
         # all scores of the MC options
         return "scores" in self._dict
 
     @property
     def scores(self) -> Iterable[Dict[str, Any]]: # different MC options
-        if not self.contains_all_scores():
+        if not self.contains_all_choices():
             return []
         elif self._sort_by is None:
             return iter(self._dict["scores"])
@@ -217,6 +226,17 @@ class Result(ANSObject):
     def get_choices(self) -> List[List[bool]]:
         return [a.get_choices() for a in self.submissions]
 
+    def get_binary_score_string(self) -> str:
+        rtn = []
+        for a in self.submissions:
+            if a.score is None:
+                rtn.append("?")
+            elif a.score>0:
+                rtn.append("1")
+            else:
+                rtn.append(".")
+        return "".join(rtn)
+
     def get_answer_string(self) -> str:
         return "".join([a.get_answer_letter() for a in self.submissions])
 
@@ -243,7 +263,7 @@ class Result(ANSObject):
 
     def has_answer_details(self) -> bool:
         try:
-            return self._submissions[0].contains_all_scores()
+            return self._submissions[0].contains_all_choices()
         except IndexError:
             return False
 
@@ -352,7 +372,7 @@ class Assignment(ANSObject):
             # result df
             data = []
             for r in self.results:
-                if len(r.users) >0:
+                if len(r.users) > 0:
                     stud = r.users[0]["student_number"]
                 else:
                     stud = None
@@ -362,7 +382,7 @@ class Assignment(ANSObject):
                        "student":stud,
                        "grade": r.grade,
                        "total_points": r.total_points,
-                       "answers": r.get_answer_string()}
+                       "questions": r.get_binary_score_string()}
                 data.append(row)
             rtn = pd.DataFrame(data).convert_dtypes()
             if len(rtn) > 0:
@@ -371,8 +391,18 @@ class Assignment(ANSObject):
 
             return rtn
 
-    def dataframe(self, raw_dict:bool=False) -> pd.DataFrame:
-        if not raw_dict:
+    def course_info(self) -> Tuple[str,str,str]:
+        if isinstance(self.course, Course):
+            name = self.course.name
+            code = self.course.course_code
+            instr = self.course.all_instructors
+            return code, name, instr
+        else:
+            return "", "", ""
+
+
+    def dataframe(self, raw_ans_data:bool=False) -> pd.DataFrame:
+        if not raw_ans_data:
             d = self._dict
             d["n_exercises"] = len(self.exercises)
             d["n_questions"] = len(self.questions)

@@ -7,7 +7,7 @@ from time import sleep, time
 from typing import Dict, List, Optional, Union
 
 from . import _request_tools as rt
-from . import token
+from . import _token
 from ._misc import flatten, make_date, print_feedback
 from .types import Assignment, Course, Exercise, Question, Result, Submission
 
@@ -16,7 +16,7 @@ DEFAULT_N_THREADS = 20
 class ANSApi(object):
 
     URL = "https://ans.app/api/v2/"
-    N_REQUESTS_PER_MINUTE  = 495 #TODO could be moved to initialize
+    N_REQUESTS_PER_MINUTE  = 490 #TODO could be moved to initialize
     SAVE_INTERVALL = 10
 
     def __init__(self, n_threads:int = DEFAULT_N_THREADS):
@@ -42,7 +42,7 @@ class ANSApi(object):
 
     def init_token(self):
         try:
-            token_str = token.read()
+            token_str = _token.read()
         except RuntimeError:
             self.__auth_header = None
             return
@@ -55,7 +55,7 @@ class ANSApi(object):
 
     def _check_token(self):
         if self.__auth_header is None:
-            raise RuntimeError(token.NO_TOKEN_ERROR_MSG)
+            raise RuntimeError(_token.NO_TOKEN_ERROR_MSG)
 
 
     @staticmethod
@@ -245,10 +245,11 @@ class ANSApi(object):
             assignment_list = assignments
 
         last_save = time()
-        for ass in assignment_list:
+        n_ass = len(assignment_list)
+        for c, ass in enumerate(assignment_list):
             r = self.get_multiple_pages(what=f"assignments/{ass.id}/exercises")
             if len(r):
-                self._feedback("[questions {}] {}".format(len(r), ass.dict["name"]))
+                self._feedback(f"[{len(r)} questions] {c}/{n_ass}   {ass.dict['name']}")
                 ass.exercises = [Exercise(obj) for obj in r]
                 self._download_questions(ass.exercises) # multi thread
             if time() -last_save > ANSApi.SAVE_INTERVALL:
