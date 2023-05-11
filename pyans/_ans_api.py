@@ -249,7 +249,7 @@ class ANSApi(object):
         for c, ass in enumerate(assignment_list):
             r = self.get_multiple_pages(what=f"assignments/{ass.id}/exercises")
             if len(r):
-                self._feedback(f"[{len(r)} questions] {c}/{n_ass}   {ass.dict['name']}")
+                self._feedback(f"[{len(r)} exercises] {c}/{n_ass}   {ass.dict['name']}")
                 ass.exercises = [Exercise(obj) for obj in r]
                 self._download_questions(ass.exercises) # multi thread
             if time() -last_save > ANSApi.SAVE_INTERVALL:
@@ -269,9 +269,11 @@ class ANSApi(object):
             obj.questions = [Question(obj) for obj in rsp]
 
 
-    def download_submissions(self, assignments:Union[Assignment, List[Assignment]],
-                                         force_update:bool=False)-> None:
-        # downloads result submissions
+    def download_submissions_and_student_info(self,
+                        assignments:Union[Assignment, List[Assignment]],
+                        force_update:bool=False)-> None:
+        # downloads submissions and student information
+
         if isinstance(assignments, Assignment):
             assignments = [assignments] #force list
 

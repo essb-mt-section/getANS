@@ -38,18 +38,8 @@ class AssignmentDB(object):
             df = ass.dataframe(raw_ans_data=raw_dict)
             tmp.append(df)
         rtn = pd.concat(tmp)
-        rtn = rtn.reset_index()
+        rtn = rtn.reset_index().drop(columns=["index"])
         return rtn
-
-    def course_overview_all(self):
-        return self.course_overview("FSWP2-032-A")
-
-    def course_overview(self, course_code):
-        for ass in self.assignments:
-            code, name, instr = ass.course_info()
-            if code == course_code:
-                pass
-
 
     def course_list_df(self):
         names = []
@@ -67,13 +57,13 @@ class AssignmentDB(object):
                              "name": names})
 
 
-    def results_df(self, raw_ans_data:bool=False) -> pd.DataFrame:
+    def grades_df(self, raw_ans_data:bool=False) -> pd.DataFrame:
         tmp = []
         for ass in self._assignments:
-            df = ass.results_dataframe(raw_ans_data=raw_ans_data)
+            df = ass.grades_dataframe(raw_ans_data=raw_ans_data)
             tmp.append(df)
         rtn = pd.concat(tmp)
-        rtn = rtn.reset_index()
+        rtn = rtn.reset_index().drop(columns=["index"])
         return rtn
 
     def assignments_df(self, raw_ans_data:bool=False) -> pd.DataFrame:
@@ -196,7 +186,7 @@ class AssignmentDB(object):
             self.save()
 
         if submissions:
-            api.download_submissions(self._assignments,
+            api.download_submissions_and_student_info(self._assignments,
                                         force_update=force_update)
             self.save()
 

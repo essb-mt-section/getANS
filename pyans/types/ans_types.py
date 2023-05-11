@@ -365,7 +365,7 @@ class Assignment(ANSObject):
     def results_ids(self) -> List[str]:
         return [r.id for r in self.results]
 
-    def results_dataframe(self, raw_ans_data:bool=False) -> pd.DataFrame:
+    def grades_dataframe(self, raw_ans_data:bool=False) -> pd.DataFrame:
         if raw_ans_data:
             return dataframe_from_list_of_dict([a.dict for a in self.results], nested=True)
         else:
@@ -376,14 +376,17 @@ class Assignment(ANSObject):
                     stud = r.users[0]["student_number"]
                 else:
                     stud = None
-
+                code, cname, _ = self.course_info()
                 row = {"course_id": self._dict["course_id"],
+                        "course_code": code,
                        "assignment_id": self.id,
                        "student":stud,
                        "grade": r.grade,
                        "total_points": r.total_points,
-                       "questions": r.get_binary_score_string()}
+                       "questions": r.get_binary_score_string(),
+                        "course_name": cname}
                 data.append(row)
+
             rtn = pd.DataFrame(data).convert_dtypes()
             if len(rtn) > 0:
                 rtn.grade = pd.to_numeric(rtn.grade)

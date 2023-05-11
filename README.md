@@ -22,7 +22,7 @@ Python 3.8+ and the following libraries (see [requirements.txt](requirements.txt
 call: `python ans_cli.py`
 
 ```
-usage: ans_cli.py [-h] [--usage] [--token] [--new [DATABASE_NAME]] [--exercises] [--responses] [--submissions] [--courses] [--results] [--assignments]
+usage: ans_cli.py [-h] [--usage] [--token] [--new [DATABASE_NAME]] [--exercises] [--responses] [--submissions] [--courses] [--grades] [--assignments]
                   [--file [EXCEL_FILE]]
                   [DATABASE]
 
@@ -39,13 +39,13 @@ options:
 Retrieve / Download:
   --new [DATABASE_NAME], -n [DATABASE_NAME]
                         initiate new database
-  --exercises           retrieve exercises & questions
   --responses           retrieve responses
+  --exercises           retrieve exercises & questions
   --submissions         retrieve submissions
 
 Show / Export:
   --courses, -c         list all courses
-  --results, -r         list all results
+  --grades, -r         list all grades
   --assignments, -a     overview all assignments
   --file [EXCEL_FILE], -s [EXCEL_FILE]
                         export to excel file
@@ -59,15 +59,15 @@ Ensure that you have set a access token. (for more information call '--token')
 
 1) Initiate new database:
         `--new mydatabase` and follow instructions
-2) Download results  (responses):
+2) Download grades  (responses):
         `mydatabase --responses`
 3) Download all questions (exercises):
         `mydatabase --exercises` (that might take a while!)
 4) Show assignment overview:
         `mydatabase -a`
-5) Show results:
+5) Show grades:
         `mydatabase -r`
 
-    To save assignment overview or results just append `--file myexcelfile.xlsx`
+    To save assignment overview or grades just append `--file myexcelfile.xlsx`
 
 
