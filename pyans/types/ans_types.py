@@ -45,11 +45,66 @@ class ANSObject(object):
         return self._dict[key]
 
 
+class InsightsQuestion(ANSObject):
+
+    @property
+    def p_value(self) -> Optional[float]:
+        try:
+            return self._dict["p_value"]
+        except KeyError:
+            return None
+
+    @property
+    def rit_value(self) -> Optional[float]:
+        try:
+            return self._dict["rit_value"]
+        except KeyError:
+            return None
+
+    @property
+    def rir_value(self) -> Optional[float]:
+        try:
+            return self._dict["rir_value"]
+        except KeyError:
+            return None
+
+
+class InsightsAssignment(ANSObject):
+
+    @property
+    def participants(self) -> Optional[int]:
+        try:
+            return self._dict["participants"]
+        except KeyError:
+            return None
+
+    @property
+    def kr20(self) -> Optional[float]:
+        try:
+            return self._dict["kr20"]
+        except KeyError:
+            return None
+
+    @property
+    def pass_rate(self) -> Optional[float]:
+        try:
+            return self._dict["pass_rate"]
+        except KeyError:
+            return None
+
+
 class Question(ANSObject):
+
+    def __init__(self, dict_:Dict[str, Any]) -> None:
+        super().__init__(dict_)
+        self._insights = None
 
     @property
     def category(self) -> str:
-        return self._dict["category"]
+        try:
+            return self._dict["category"]
+        except:
+            return "?"
 
     @property
     def position(self):
@@ -57,7 +112,18 @@ class Question(ANSObject):
 
     @property
     def points(self):
-        return float(self._dict["position"])
+        try:
+            return float(self._dict["position"])
+        except:
+            return 0
+
+    @property
+    def insights(self) -> Optional[InsightsQuestion]:
+        return self._insights
+
+    @insights.setter
+    def insights(self, val:Optional[InsightsQuestion]):
+        self._insights = val
 
 
 class Exercise(ANSObject):
@@ -113,9 +179,6 @@ class Course(ANSObject):
             instr.append(i["external_id"])
         return instr
 
-class Insight(ANSObject):
-
-    pass
 
 
 class Submission(ANSObject):
@@ -276,7 +339,7 @@ class Assignment(ANSObject):
         self._results = []
         self._exercises = []
         self._course = None
-        self._insight = None # TODO
+        self._insight = None
         self.results_undefined = True
 
     def __str__(self) -> str:
@@ -292,11 +355,11 @@ class Assignment(ANSObject):
         self._course = val
 
     @property
-    def insight(self) -> Optional[Insight]:
+    def insights(self) -> Optional[InsightsAssignment]:
         return self._insight
 
-    @insight.setter
-    def insight(self, val:Optional[Insight]):
+    @insights.setter
+    def insights(self, val:Optional[InsightsAssignment]):
         self._insight = val
 
     @property
@@ -362,6 +425,11 @@ class Assignment(ANSObject):
             return "NL"
 
     @property
+    def online(self):
+        name = self._dict["name"]
+        return name.find(" online") > 0
+
+    @property
     def results_ids(self) -> List[str]:
         return [r.id for r in self.results]
 
@@ -410,6 +478,7 @@ class Assignment(ANSObject):
             d["n_exercises"] = len(self.exercises)
             d["n_questions"] = len(self.questions)
             d["lang"] = self.language
+            d["online"] = int(self.online)
             if isinstance(self.course, Course):
                 d["course_name"] = self.course.name
                 d["course_code"] = self.course.course_code
@@ -424,7 +493,7 @@ class Assignment(ANSObject):
 
             return dataframe_from_list_of_dict([d],
                              columns=["id", "course_id","n_exercises", "n_questions",
-                                       "lang", "n_mc", "n_open", "points_total", "points_mc", "points_open",
+                                       "lang", "online", "n_mc", "n_open", "points_total", "points_mc", "points_open",
                                        "course_code", "name", "course_name"],
                              nested=False).convert_dtypes()
         else:

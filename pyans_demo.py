@@ -21,6 +21,10 @@ db.retrieve(results=True, exercises=False, submissions=False)
 # show courses
 print(db.course_list_df().to_string())
 
+# show assignments
+print(db.assignments_df().to_string())
+
+
 # export data
 data = db.grades_df() # for assignments: db.assignments_df()
 # since 'data' is a Pandas dataframe you can export it to different file formats (see Pandas documentation)

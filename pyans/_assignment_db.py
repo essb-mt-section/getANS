@@ -179,13 +179,16 @@ class AssignmentDB(object):
                 submissions=False,
                 answer_details=False,
                 force_update = False,
-                _feedback_queue=None): # TODO dealing with feedback queue
+                _feedback_queue=None): # TODO dealing with feedback queue for GUI
         # retrieve data if they do not exists
         api.save_callback_fnc(self.save) # save while waiting
         api.feedback_queue = _feedback_queue
 
         if results:
             api.download_results(self._assignments,
+                                     force_update=force_update)
+            self.save()
+            api.download_assignment_insights(self._assignments,
                                      force_update=force_update)
             self.save()
 
@@ -200,7 +203,7 @@ class AssignmentDB(object):
             self.save()
 
         if answer_details:
-            ##FIXME TODO
+            ##TODO answer_details not yet implemented
             self.save()
 
 

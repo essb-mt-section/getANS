@@ -9,22 +9,24 @@ from typing import Dict, List, Optional, Union
 from . import _request_tools as rt
 from . import _token
 from ._misc import flatten, make_date, print_feedback
-from .types import Assignment, Course, Exercise, Question, Result, Submission
+from .types import Assignment, Course, Exercise, Question, Result, Submission, \
+            InsightsAssignment, InsightsQuestion
 
 DEFAULT_N_THREADS = 20
+N_REQUESTS_PER_MINUTE  = 490
 
 class ANSApi(object):
 
     URL = "https://ans.app/api/v2/"
-    N_REQUESTS_PER_MINUTE  = 490 #TODO could be moved to initialize
     SAVE_INTERVALL = 10
 
-    def __init__(self, n_threads:int = DEFAULT_N_THREADS):
+    def __init__(self, n_threads:int = DEFAULT_N_THREADS,
+                 n_requests_per_minute=N_REQUESTS_PER_MINUTE):
         self._save_callback_fnc = None
         self.__auth_header = None
         self._n_threads = 1
         self.feedback_queue = None
-        self._request_history = rt.TimeStampHistory(ANSApi.N_REQUESTS_PER_MINUTE)
+        self._request_history = rt.TimeStampHistory(n_requests_per_minute)
         self.cache = rt.Cache()
 
         self.n_threads  = n_threads
@@ -81,7 +83,7 @@ class ANSApi(object):
     def save_callback_fnc(self, fnc):
         self._save_callback_fnc = fnc
 
-    def _save(self):
+    def  _save(self):
         # intermediate save, if save_callback_fnc is defined
         if isinstance(self._save_callback_fnc, Callable):
             self._save_callback_fnc()
@@ -101,15 +103,15 @@ class ANSApi(object):
 
         self._request_history.timestamp() # register upcoming
 
-
-    def get(self, url) -> Union[Dict, None, List[Dict]]:
+    def get(self, url, ignore_http_error=False) -> Union[Dict, None, List[Dict]]:
         """Returns the requested response or None
 
         Function delays if required.
         """
         self._check_token()
         self._register_and_delay()
-        rtn = rt.request_json(url, headers=self.__auth_header)
+        rtn = rt.request_json(url, headers=self.__auth_header,
+                    ignore_http_error=ignore_http_error)
         if rtn is not None:
             self.cache.add(url, rtn)
         return rtn
@@ -231,6 +233,36 @@ class ANSApi(object):
                 break
 
 
+    def download_assignment_insights(self, assignments:Union[Assignment, List[Assignment]],
+                        force_update:bool=False, feedback=True) -> None:
+
+
+        # downloads results and writes it to assignment
+        if isinstance(assignments, Assignment):
+            assignments = [assignments] #force list
+
+        if not force_update:
+            # filter list (only those without responses)
+            assignment_list = [ass for ass in assignments if ass.insights is None ]
+        else:
+            assignment_list = assignments
+
+        # make urls
+        urls = []
+        for ass in assignment_list:
+            urls.append(ANSApi.make_url(what=f"insights/assignments/{ass.id}"))
+
+        responses = self._get_multiprocessing(urls, ignore_http_error=True)
+
+        fcnt = 0
+        n_ass = len(assignments)
+        for ass, rsp in zip(assignments, responses):
+            ass.insights= InsightsAssignment(rsp)
+            if feedback:
+                fcnt = fcnt + 1
+                self._feedback(f"[insights] {fcnt}/{n_ass}  {ass.dict['name']}")
+
+
     def download_exercises_and_questions(self,
                                 assignments:Union[Assignment, List[Assignment]],
                                 force_update:bool=False)-> None:
@@ -267,6 +299,10 @@ class ANSApi(object):
         responses = self._get_multiprocessing(urls)
         for obj, rsp in zip(exercises, responses):
             obj.questions = [Question(obj) for obj in rsp]
+
+            # FIXME download question insights
+            # /api/v2/insights/questions/{id}
+
 
 
     def download_submissions_and_student_info(self,
@@ -306,28 +342,30 @@ class ANSApi(object):
 
 
     def downland_answer_details(self, result, force_update=False,
-                                additional_feedback="")-> None: #FIXME UPdate to new method
+                                additional_feedback="")-> None:
+        #TODO answer_details not yet implemented
         assert isinstance(result, Result)
         if not force_update and result.has_answer_details():
             return
 
-        # get submission details (which answer) parallel
-        self._feedback("[answer details] {} {}".format(result.id, additional_feedback))
-        urls = [ANSApi.make_url(what="submissions/{}".format(s["id"])) \
-                        for s in result.dict["submissions"]]
-        self._register_and_delay()
-        headers = [self.__auth_header] * len(urls)
-        submission_dicts = []
-        for r in Pool().map(rt.map_get_fnc, zip(urls, headers)):
-            try:
-                submission_dicts.append(r.json())
-            except JSONDecodeError:
-                r.raise_for_status()
+        # # get submission details (which answer) parallel
+        # self._feedback("[answer details] {} {}".format(result.id, additional_feedback))
+        # urls = [ANSApi.make_url(what="submissions/{}".format(s["id"])) \
+        #                 for s in result.dict["submissions"]]
+        # self._register_and_delay()
+        # headers = [self.__auth_header] * len(urls)
+        # submission_dicts = []
+        # for r in Pool().map(rt.map_get_fnc, zip(urls, headers)):
+        #     try:
+        #         submission_dicts.append(r.json())
+        #     except JSONDecodeError:
+        #         r.raise_for_status()
 
-        result.submissions = [Submission(obj) for obj in submission_dicts]
+        # result.submissions = [Submission(obj) for obj in submission_dicts]
 
     def _get_multiprocessing(self, url_list:List[str],
-                                    feedback_list:Optional[List[Optional[str]]]=None):
+                                ignore_http_error=False,
+                                feedback_list:Optional[List[Optional[str]]]=None):
         # helper function to download from ANS
         # returns response that belong to the url_list
 
@@ -344,7 +382,7 @@ class ANSApi(object):
                 rsp = self.cache.get(url)
                 if rsp is None:
                     # try retrieve online
-                    rsp = self.get(url)
+                    rsp = self.get(url, ignore_http_error=ignore_http_error)
                 if rsp is not None and len(rsp):
                     rtn.append(rsp)
                     if fb is not None:
@@ -364,7 +402,8 @@ class ANSApi(object):
                     # try retrieve online (add the thread list)
                     self._register_and_delay()
                     proc_manager.add(who=i,
-                        thread=rt.RequestProcess(url, headers=self.__auth_header))
+                        thread=rt.RequestProcess(url, headers=self.__auth_header,
+                                                 ignore_http_error=ignore_http_error))
                 else:
                     # from cache
                     rtn_dict[i] = rsp

@@ -29,6 +29,7 @@ class Cache(object):
 
 
 def request_json(url, headers:Optional[Dict]=None,
+                      ignore_http_error=False,
                       timeout:int=DEFAULT_TIMEOUT) -> Union[Dict, None, List[Dict]]:
     """online request of a dict (via json response), might raise JSONDecodeError
     return None, if ConnectionError or timeout
@@ -39,11 +40,11 @@ def request_json(url, headers:Optional[Dict]=None,
     except (requests.exceptions.ConnectionError,
             requests.exceptions.Timeout):
         return None
-
     try:
         rtn = req.json()
     except JSONDecodeError:
-        req.raise_for_status()
+        if not ignore_http_error:
+            req.raise_for_status()
         rtn = None
 
     return rtn
@@ -54,11 +55,13 @@ class RequestProcess(Process):
 
     def __init__(self, url,  headers:Optional[Dict]=None,
                     request_timeout:int=DEFAULT_TIMEOUT,
+                    ignore_http_error=False,
                     autostart=True):
         super().__init__()
 
         self.url = url
         self.request_timeout = request_timeout
+        self.ignore_http_error = ignore_http_error
         self.header = headers
         self._queue = Queue()
         self._response = None
@@ -86,6 +89,7 @@ class RequestProcess(Process):
 
     def run(self):
         rtn = request_json(self.url, headers=self.header,
+                           ignore_http_error=self.ignore_http_error,
                                timeout=self.request_timeout)
         if rtn is None:
             rtn = RequestProcess.NOTHING_RECEIVED
@@ -93,7 +97,7 @@ class RequestProcess(Process):
         self._has_response.set()
 
 
-class MultiplePagesRequestProcess(RequestProcess): #FIXME never tested!!
+class MultiplePagesRequestProcess(RequestProcess):
     # requestion multiple pages
 
     def __init__(self, url,
@@ -220,10 +224,6 @@ class TimeStampHistory(object):
         that is, time passed since oldest element in the history
         """
         return datetime.now() - self.history[element]
-
-
-def map_get_fnc(x): ## TODO maybe not needed
-    return requests.get(x[0], headers=x[1], timeout=DEFAULT_TIMEOUT) #TODO fixed timeout
 
 
 def _find_cnttag_items(txt:str)-> Tuple[Optional[int],Optional[int], str]:
