@@ -98,24 +98,25 @@ class Question(ANSObject):
     def __init__(self, dict_:Dict[str, Any]) -> None:
         super().__init__(dict_)
         self._insights = None
+        self.insights_undefined = True
 
     @property
     def category(self) -> str:
         try:
             return self._dict["category"]
-        except:
-            return "?"
+        except KeyError:
+             return "?"
 
     @property
     def position(self):
         return int(self._dict["position"])
 
     @property
-    def points(self):
+    def points(self) -> float:
         try:
             return float(self._dict["position"])
-        except:
-            return 0
+        except KeyError:
+            return 0.0
 
     @property
     def insights(self) -> Optional[InsightsQuestion]:
@@ -124,6 +125,7 @@ class Question(ANSObject):
     @insights.setter
     def insights(self, val:Optional[InsightsQuestion]):
         self._insights = val
+        self.insights_undefined = False
 
 
 class Exercise(ANSObject):

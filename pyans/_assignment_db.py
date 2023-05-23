@@ -196,6 +196,9 @@ class AssignmentDB(object):
             api.download_exercises_and_questions(self._assignments,
                                                      force_update=force_update)
             self.save()
+            api.download_question_insights(self._assignments,
+                                            force_update=force_update)
+            self.save()
 
         if submissions:
             api.download_submissions_and_student_info(self._assignments,
