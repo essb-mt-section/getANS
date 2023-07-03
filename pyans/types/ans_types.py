@@ -432,8 +432,8 @@ class Assignment(ANSObject):
     @property
     def language(self):
         name = self._dict["name"]
-        eng = name.find(" EN") > 0
-        nl = name.find(" NL") > 0
+        eng = name.find(" EN") > 0 or name.find("-EN") > 0 or name.upper().find("ENGLISH") > 0
+        nl = name.find(" NL") > 0 or name.find("-NL") > 0 or name.upper().find("DUTCH") > 0
         if eng == nl:
             return "??" # unclear, evidence for both or none
         elif eng:
@@ -442,9 +442,14 @@ class Assignment(ANSObject):
             return "NL"
 
     @property
+    def resit(self):
+        n = self._dict["name"].lower()
+        return n.find(" hertentamen") > 0 or n.find(" resit") > 0
+
+    @property
     def online(self):
-        name = self._dict["name"]
-        return name.find(" online") > 0
+        n = self._dict["name"].lower()
+        return n.find(" online") > 0 or n.find(" proctored") > 0
 
     @property
     def results_ids(self) -> List[str]:
@@ -496,6 +501,7 @@ class Assignment(ANSObject):
             d["n_questions"] = len(self.questions)
             d["lang"] = self.language
             d["online"] = int(self.online)
+            d["resit"] = int(self.resit)
             if isinstance(self.course, Course):
                 d["course_name"] = self.course.name
                 d["course_code"] = self.course.course_code
@@ -513,7 +519,7 @@ class Assignment(ANSObject):
             d["pass_rate"] = self.insights.pass_rate
 
             return dataframe_from_list_of_dict([d],
-                             columns=["id", "course_id","n_exercises", "n_questions",
+                             columns=["id", "course_id","n_exercises", "n_questions", "resit",
                                        "lang", "online", "n_mc", "n_open", "points_total", "points_mc", "points_open",
                                        "participants", "kr20", "pass_rate",
                                        "course_code", "name", "course_name"],
