@@ -26,6 +26,6 @@ print(db.assignments_df().to_string())
 
 
 # export data
-data = db.grades_df() # for assignments: db.assignments_df()
+data = db.grades_df() # for assignments: db.assignments_df(), df.questions_df()
 # since 'data' is a Pandas dataframe you can export it to different file formats (see Pandas documentation)
 data.to_csv("myexport.csv")

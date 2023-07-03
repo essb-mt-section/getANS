@@ -1,5 +1,6 @@
 import json
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from collections import OrderedDict
 
 import pandas as pd
 
@@ -107,6 +108,19 @@ class Question(ANSObject):
         except KeyError:
              return "?"
 
+    @property
+    def choice_type(self) -> str:
+        try:
+            return self._dict["choice_type"]
+        except KeyError:
+             return "?"
+
+    @property
+    def bonus(self) -> Optional[bool]:
+        try:
+            return self._dict["bonus"]
+        except KeyError:
+             return None
     @property
     def position(self):
         return int(self._dict["position"])
@@ -390,6 +404,7 @@ class Assignment(ANSObject):
                 rtn.append(q)
         return rtn
 
+
     @property
     def open_questions(self) -> List[Question]:
         return list(filter(lambda x:x.category=="open", self.questions))
@@ -507,6 +522,22 @@ class Assignment(ANSObject):
             return dataframe_from_list_of_dict([self._dict],
                          nested=True).convert_dtypes()
 
+
+    def questions_dataframe(self) -> pd.DataFrame: # list of all questions of all exercises
+        rtn = []
+        for q in self.questions:
+            d = OrderedDict()
+            d["assignment"] = self.id
+            d["category"] = q.category
+            d["choice_type"] = q.choice_type
+            d["points"] = q.points
+            d["position"] = q.position
+            d["bonus"] = q.bonus
+            d["p_value"] = q.insights.p_value
+            d["rir_value"] = q.insights.rir_value
+            d["rit_value"] = q.insights.rit_value
+            rtn.append(d)
+        return dataframe_from_list_of_dict(rtn)
 
 
     def n_results(self) -> int:

@@ -76,6 +76,16 @@ class AssignmentDB(object):
 
         return rtn
 
+    def questions_df(self) -> pd.DataFrame:
+        tmp = []
+        for ass in self._assignments:
+            df = ass.questions_dataframe()
+            tmp.append(df)
+        rtn = pd.concat(tmp)
+        rtn = rtn.reset_index().drop(columns=["index"])
+
+        return rtn
+
     def overview(self):
 
         n_resp = 0
