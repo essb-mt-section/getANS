@@ -493,9 +493,14 @@ class Assignment(ANSObject):
             d["points_mc"] = self.points_mc
             d["points_total"] = self.points_total
 
+            d["participants"] = self.insights.participants
+            d["kr20"] = self.insights.kr20
+            d["pass_rate"] = self.insights.pass_rate
+
             return dataframe_from_list_of_dict([d],
                              columns=["id", "course_id","n_exercises", "n_questions",
                                        "lang", "online", "n_mc", "n_open", "points_total", "points_mc", "points_open",
+                                       "participants", "kr20", "pass_rate",
                                        "course_code", "name", "course_name"],
                              nested=False).convert_dtypes()
         else:

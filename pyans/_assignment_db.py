@@ -156,8 +156,13 @@ class AssignmentDB(object):
             self.filename = filename
 
         if self.filename is not None:
-            with BZ2File(self.filename, 'wb') as f:
+            with BZ2File(self.filename + "~", 'wb') as f:
                 pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
+            try:
+                os.remove(self.filename)
+            except FileNotFoundError:
+                pass
+            os.rename(self.filename + "~", self.filename)
 
 
     def initialize(self,
