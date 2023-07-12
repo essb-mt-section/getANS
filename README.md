@@ -19,10 +19,10 @@ Python 3.8+ and the following libraries (see [requirements.txt](requirements.txt
 
 ## PyANS Command line interface
 
-call: `python ans_cli.py`
+call: `python -m pyans`
 
 ```
-usage: ans_cli.py [-h] [--usage] [--token] [--new [DATABASE_NAME]] [--exercises] [--results] [--submissions] [--courses] [--grades] [--assignments]
+usage: pyans [-h] [--usage] [--token] [--new [DATABASE_NAME]] [--exercises] [--results] [--submissions] [--courses] [--grades] [--assignments]
                   [--file [EXCEL_FILE]]
                   [DATABASE]
 
@@ -50,7 +50,7 @@ Show / Export:
   --file [EXCEL_FILE], -f [EXCEL_FILE]
                         export what is shown to excel
 
-Version 0.7, (c) Oliver Lindemann
+(c) Oliver Lindemann
 ```
 
 ### Typical workflow

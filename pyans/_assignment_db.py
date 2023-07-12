@@ -9,11 +9,11 @@ from typing import AnyStr, Iterator, List, Optional, Union
 
 import pandas as pd
 
-from ._ans_api import ANSApi
+from . import _ans_api
 from ._misc import print_feedback
 from .types import Assignment, Course
 
-api = ANSApi() # global API instance
+api = _ans_api.ANSApi() # global API instance
 
 class AssignmentDB(object):
 
