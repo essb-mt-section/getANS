@@ -180,7 +180,7 @@ class AssignmentDB(object):
               end_date:Union[str, date],
               select_by_name:str,
               feedback:bool = True):
-
+        """select_by_name: regular expression"""
         api.init_token()
         self.assignments = api.find_assignments(start_date=start_date,
                                                 end_date=end_date)

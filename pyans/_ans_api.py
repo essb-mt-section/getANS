@@ -1,4 +1,5 @@
 import itertools
+import logging
 from collections.abc import Callable
 from datetime import date, timedelta
 from json.decoder import JSONDecodeError
@@ -8,7 +9,7 @@ from typing import Dict, List, Optional, Union
 
 from . import _request_tools as rt
 from . import _token
-from ._misc import flatten, make_date, print_feedback
+from ._misc import flatten, make_date, print_feedback, init_logging
 from .types import Assignment, Course, Exercise, Question, Result, Submission, \
             InsightsAssignment, InsightsQuestion
 
@@ -31,6 +32,7 @@ class ANSApi(object):
 
         self.n_threads  = n_threads
         self.init_token()
+        init_logging()
 
     @property
     def n_threads(self) -> int:

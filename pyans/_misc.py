@@ -1,4 +1,5 @@
 import datetime
+import logging
 from queue import Queue
 from typing import Optional
 
@@ -26,3 +27,16 @@ def make_date(data_str:str) -> datetime.date:
             if len(formats) == 0:
                 raise err
 
+
+def init_logging():
+        log_file = "retrieval.log"
+        logging.basicConfig(level=logging.INFO,
+                        format='[%(asctime)s]  %(message)s',
+                        datefmt='%m-%d %H:%M:%S',
+                        filename=log_file,
+                        filemode='a')
+        print("Log file: {}".format(log_file))
+
+# logging.warning(l)
+# logging.error(l)
+# logging.info(l)

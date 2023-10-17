@@ -1,10 +1,12 @@
+import logging
 import queue
-import requests
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from multiprocessing import Event, Process, Queue
 from time import sleep
 from typing import Dict, List, Optional, Tuple, Union
+
+import requests
 
 from ._misc import flatten
 
@@ -35,6 +37,8 @@ def request_json(url, headers:Optional[Dict]=None,
     return None, if ConnectionError or timeout
     """
     # print(url) #DEBUG
+    logging.info(url)
+
     try:
         req = requests.get(url.strip(), headers=headers, timeout=timeout)
     except (requests.exceptions.ConnectionError,

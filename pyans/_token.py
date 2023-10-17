@@ -49,4 +49,4 @@ def token_cli():
     r = input(f"Do you want to {wording} ANS token? (y/N) ")
     if r.lower() == "yes" or r.lower() == "y":
         set(token=input("Token: "))
-        print(f"\nNew token: '{t}'")
+        print(f"\nNew token: '{read()}'")
