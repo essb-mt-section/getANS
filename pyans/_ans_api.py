@@ -1,33 +1,28 @@
 import itertools
-import logging
 from collections.abc import Callable
 from datetime import date, timedelta
-from json.decoder import JSONDecodeError
-from multiprocessing import Pool
-from time import sleep, time
+from time import time
 from typing import Dict, List, Optional, Union
 
 from . import _request_tools as rt
 from . import _token
-from ._misc import flatten, make_date, print_feedback, init_logging
-from .types import Assignment, Course, Exercise, Question, Result, Submission, \
-            InsightsAssignment, InsightsQuestion
+from ._misc import flatten, init_logging, make_date, print_feedback
+from .types import (Assignment, Course, Exercise, InsightsAssignment,
+                    InsightsQuestion, Question, Result)
 
 DEFAULT_N_THREADS = 20
-N_REQUESTS_PER_MINUTE  = 490
+INTERMEDIATE_SAVE = 300
 
 class ANSApi(object):
 
     URL = "https://ans.app/api/v2/"
     SAVE_INTERVALL = 10
 
-    def __init__(self, n_threads:int = DEFAULT_N_THREADS,
-                 n_requests_per_minute=N_REQUESTS_PER_MINUTE):
+    def __init__(self, n_threads:int = DEFAULT_N_THREADS):
         self._save_callback_fnc = None
         self.__auth_header = None
         self._n_threads = 1
         self.feedback_queue = None
-        self._request_history = rt.TimeStampHistory(n_requests_per_minute)
         self.cache = rt.Cache()
 
         self.n_threads  = n_threads
@@ -85,25 +80,10 @@ class ANSApi(object):
     def save_callback_fnc(self, fnc):
         self._save_callback_fnc = fnc
 
-    def  _save(self):
+    def  _save_intermediate(self):
         # intermediate save, if save_callback_fnc is defined
         if isinstance(self._save_callback_fnc, Callable):
             self._save_callback_fnc()
-
-    def _register_and_delay(self):
-        """register online request and delays process if required due to overfull history"""
-        # prepares access and wait if required
-        crit_time = timedelta(seconds=60)
-        if self._request_history.is_full() and \
-                        self._request_history.lag(0) <= crit_time:
-            self._save()
-            tmp =  crit_time - self._request_history.lag(0)
-            wait_time = tmp.seconds +1
-            self._request_history.history = []
-            self._feedback(f"Request limit of {self._request_history.max_size} reached. Waiting {wait_time} seconds...")
-            sleep(wait_time)
-
-        self._request_history.timestamp() # register upcoming
 
     def get(self, url, ignore_http_error=False) -> Union[Dict, None, List[Dict]]:
         """Returns the requested response or None
@@ -111,8 +91,7 @@ class ANSApi(object):
         Function delays if required.
         """
         self._check_token()
-        self._register_and_delay()
-        rtn = rt.request_json(url, headers=self.__auth_header,
+        rtn = rt.wait_request_json(url, headers=self.__auth_header,
                     ignore_http_error=ignore_http_error)
         if rtn is not None:
             self.cache.add(url, rtn)
@@ -229,7 +208,7 @@ class ANSApi(object):
 
             for ass, rsp in zip(assignment_list[i:j], responses):
                 ass.results = [Result(obj) for obj in rsp]
-            self._save()
+            self._save_intermediate()
             i = j
             if i > len(assignment_list)-1:
                 break
@@ -287,7 +266,7 @@ class ANSApi(object):
                 ass.exercises = [Exercise(obj) for obj in r]
                 self._download_questions(ass.exercises) # multi thread
             if time() - last_save > ANSApi.SAVE_INTERVALL:
-                self._save()
+                self._save_intermediate()
                 last_save = time()
 
     def _download_questions(self, exercises:Union[Exercise, List[Exercise]]):
@@ -353,10 +332,10 @@ class ANSApi(object):
         i = 0
         while True:
             j = i + chunck_size
-            responses = self._get_multiprocessing(urls[i:j], feedback_list[i:j])
+            responses = self._get_multiprocessing(urls[i:j], feedback_list=feedback_list[i:j])
             for res, rsp in zip(result_list[i:j], responses):
                 res.update(rsp)
-            self._save()
+            self._save_intermediate()
             i = j
             if i > len(result_list)-1:
                 break
@@ -373,7 +352,6 @@ class ANSApi(object):
         # self._feedback("[answer details] {} {}".format(result.id, additional_feedback))
         # urls = [ANSApi.make_url(what="submissions/{}".format(s["id"])) \
         #                 for s in result.dict["submissions"]]
-        # self._register_and_delay()
         # headers = [self.__auth_header] * len(urls)
         # submission_dicts = []
         # for r in Pool().map(rt.map_get_fnc, zip(urls, headers)):
@@ -416,12 +394,13 @@ class ANSApi(object):
             i = -1
             for url, fb in zip(url_list, feedback):
                 i = i+1
+                if i % INTERMEDIATE_SAVE == INTERMEDIATE_SAVE-1:
+                    self._save_intermediate()
                 rsp = self.cache.get(url)
                 if fb is not None:
                     self._feedback(fb)
                 if rsp is None:
                     # try retrieve online (add the thread list)
-                    self._register_and_delay()
                     proc_manager.add(who=i,
                         thread=rt.RequestProcess(url, headers=self.__auth_header,
                                                  ignore_http_error=ignore_http_error))
@@ -478,13 +457,14 @@ class ANSApi(object):
             i = -1
             for what, fb in zip(what_list, feedback):
                 i = i + 1
+                if i % INTERMEDIATE_SAVE == INTERMEDIATE_SAVE-1:
+                    self._save_intermediate()
                 url = self.make_url(what=what) + f"?items={items}" + "&page={{cnt:1}}"
                 rsp = self.cache.get(url)
                 if fb is not None:
                     self._feedback(fb)
                 if rsp is None:
                     # try retrieve online (add the thread list)
-                    self._register_and_delay()
                     proc_manager.add(who=i,
                         thread=rt.MultiplePagesRequestProcess(url, headers=self.__auth_header))
                 else:
@@ -512,5 +492,5 @@ class ANSApi(object):
         return rtn
 
 
-    def _feedback(self, txt:str):
+    def _feedback(self, txt:str) ->None:
          print_feedback(txt, self.feedback_queue)

@@ -1,16 +1,34 @@
+"""
+"""
 import logging
 import queue
-from datetime import datetime
+import time
 from json.decoder import JSONDecodeError
 from multiprocessing import Event, Process, Queue
 from time import sleep
+from types import FunctionType
 from typing import Dict, List, Optional, Tuple, Union
 
 import requests
+from requests.structures import CaseInsensitiveDict
 
 from ._misc import flatten
 
 DEFAULT_TIMEOUT = 5
+
+class MaxRequestsError(object):
+    """Error returned by request_json, if maximal requests are reached
+
+    contains header of http request
+    """
+    CODE = 429
+
+    def __init__(self, response_headers:CaseInsensitiveDict):
+        self.headers = dict(response_headers)
+
+    @property
+    def wait_seconds(self) -> int:
+        return int(self.headers["RateLimit-Reset"])
 
 class Cache(object):
 
@@ -32,9 +50,12 @@ class Cache(object):
 
 def request_json(url, headers:Optional[Dict]=None,
                       ignore_http_error=False,
-                      timeout:int=DEFAULT_TIMEOUT) -> Union[Dict, None, List[Dict]]:
+                      timeout:int=DEFAULT_TIMEOUT) -> Union[MaxRequestsError,
+                                                            Dict, None, List[Dict]]:
     """online request of a dict (via json response), might raise JSONDecodeError
     return None, if ConnectionError or timeout
+
+    returns MaxRequestsError if too many requests are reached
     """
     # print(url) #DEBUG
     logging.info(url)
@@ -44,14 +65,43 @@ def request_json(url, headers:Optional[Dict]=None,
     except (requests.exceptions.ConnectionError,
             requests.exceptions.Timeout):
         return None
+
     try:
         rtn = req.json()
     except JSONDecodeError:
-        if not ignore_http_error:
+        try:
             req.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == MaxRequestsError.CODE: # Maximum amount of requests reached
+                return MaxRequestsError(req.headers)
+            elif not ignore_http_error:
+                raise err
         rtn = None
 
     return rtn
+
+def wait_request_json(url, headers:Optional[Dict]=None,
+                      ignore_http_error=False,
+                      timeout:int=DEFAULT_TIMEOUT,
+                      feedback_fnc:Optional[FunctionType]=None) -> Union[Dict, None, List[Dict]]:
+    """requests json, but waits and tries again if max requests is reached
+
+    see doc request_json
+    """
+    while True:
+        rtn = request_json(url=url, headers=headers,
+                           ignore_http_error=ignore_http_error,
+                           timeout=timeout)
+        if isinstance(rtn, MaxRequestsError):
+            feedback = f"Request limit reached: waiting {rtn.wait_seconds} seconds ..."
+            if isinstance(feedback_fnc, FunctionType):
+                feedback_fnc(feedback)
+            else:
+                print(feedback)
+            time.sleep(rtn.wait_seconds)
+        else:
+            return rtn
+
 
 class RequestProcess(Process):
 
@@ -66,7 +116,7 @@ class RequestProcess(Process):
         self.url = url
         self.request_timeout = request_timeout
         self.ignore_http_error = ignore_http_error
-        self.header = headers
+        self.headers = headers
         self._queue = Queue()
         self._response = None
         self._has_response = Event()
@@ -92,9 +142,10 @@ class RequestProcess(Process):
         return self._response
 
     def run(self):
-        rtn = request_json(self.url, headers=self.header,
-                           ignore_http_error=self.ignore_http_error,
-                               timeout=self.request_timeout)
+        rtn = wait_request_json(self.url, headers=self.headers,
+                        ignore_http_error=self.ignore_http_error,
+                        timeout=self.request_timeout)
+
         if rtn is None:
             rtn = RequestProcess.NOTHING_RECEIVED
         self._queue.put(rtn)
@@ -124,9 +175,9 @@ class MultiplePagesRequestProcess(RequestProcess):
         cnt = self.start_cnt
         while True:
             url = self.url.format(cnt)
-            # print(url) 3 debug
-            new_list = request_json(url, headers=self.header,
+            new_list = wait_request_json(url, headers=self.headers,
                                timeout=self.request_timeout)
+
             cnt = cnt + 1 # type: ignore
             if isinstance(new_list, list) and len(new_list):
                 if new_list in rtn_lists:
@@ -205,29 +256,6 @@ class RequestProcessManager(object):
 
         self.process_list = still_working # put living threads back
         return responses
-
-
-class TimeStampHistory(object):
-
-    def __init__(self, max_size):
-        self.max_size = max_size
-        self.history = []
-
-    def is_full(self):
-        return self.max_size <= len(self.history)
-
-    def timestamp(self):
-        self.history.append(datetime.now())
-        if len(self.history) > self.max_size:
-            self.history.pop(0)
-
-        #feedback("{}: {}".format(len(self.history), self.lag(0)))
-
-    def lag(self, element=0):
-        """current time difference to element x (default x=0,
-        that is, time passed since oldest element in the history
-        """
-        return datetime.now() - self.history[element]
 
 
 def _find_cnttag_items(txt:str)-> Tuple[Optional[int],Optional[int], str]:
