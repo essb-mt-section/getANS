@@ -97,16 +97,16 @@ class AssignmentDB(object):
         n_submissions = 0
         n_exercises = 0
         n_questions = 0
-        n_answer_details = 0
+        n_scores = 0
         for ass in self._assignments:
             if ass.results is not None:
                 for r in ass.results:
                     n_resp += 1
                     if r.submissions is not None:
-                        for _ in r.submissions:
+                        for s in r.submissions:
                             n_submissions += 1
-                            #if s.scores is not None:
-                            #    n_answer_details += 1
+                            if s.has_scores():
+                                n_scores += 1
 
                 for ex in ass.exercises:
                     n_exercises += 1
@@ -118,7 +118,7 @@ class AssignmentDB(object):
              "exercises": n_exercises,
              "questions": n_questions,
              "submissions": n_submissions,
-             #"answer details": n_answer_details
+             "scores": n_scores
              }
 
         return pd.DataFrame({"types": d.keys(), "n": d.values()})
@@ -197,7 +197,7 @@ class AssignmentDB(object):
                 results = False,
                 exercises = False,
                 submissions=False,
-                answer_details=False,
+                scores=False,
                 force_update = False,
                 _feedback_queue=None): # TODO dealing with feedback queue for GUI
         # retrieve data if they do not exists
@@ -225,33 +225,10 @@ class AssignmentDB(object):
                                         force_update=force_update)
             self.save()
 
-        if answer_details:
-            ##TODO answer_details not yet implemented
-            api.downland_answer_details(self._assignments,
+        if scores:
+            api.downland_scores(self._assignments,
                                         force_update=force_update)
             self.save()
-
-
-        # if answer_details:
-        #     # retrieve all answer details (that takes VERY LONG)
-        #     for cnt_ass, ass in enumerate(self.assignments):
-        #         for cnt_res, res in enumerate(ass.results):
-        #             while True:
-        #                 info = "({} of {}) (assignment {} of {}, {})".format(
-        #                     cnt_res + 1, len(ass.results), cnt_ass + 1,
-        #                     len(self.assignments), ass.dict["name"])
-        #                 try:
-        #                     api.retrieve_answer_details(result=res,
-        #                                                     force_update=force_update,
-        #                                                     additional_feedback=info)
-        #                     break
-        #                 except requests.exceptions.HTTPError as err:
-        #                     print_feedback(err)  # HTTP error p
-        #                     sleep(15)  # wait some time and retry
-
-        #         self.save()
-
-
 
 def load_db(filename) -> AssignmentDB:
     print_feedback("Loading {}".format(filename))

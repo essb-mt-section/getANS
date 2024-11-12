@@ -341,7 +341,7 @@ class ANSApi(object):
                 break
 
 
-    def downland_answer_details(self,
+    def downland_scores(self,
                                 assignments:Union[Assignment, List[Assignment]],
                                 force_update=False,
                                 additional_feedback="")-> None:
