@@ -10,10 +10,10 @@ Oliver Lindemann, Erasmus University Rotterdam, NL
 
 ## Dependencies
 
-Python 3.8+ and the following libraries (see [requirements.txt](requirements.txt)):
-* pandas (>=1.5)
+Python 3.10 and the following libraries:
+* pandas (>=2.2)
 * appdirs (>=1.4)
-* requests (>=2.25)
+* requests (>=2.32)
 
 ---
 

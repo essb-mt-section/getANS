@@ -5,7 +5,7 @@ from collections import OrderedDict
 import pandas as pd
 
 from .list_of_dicts import dataframe_from_list_of_dict
-
+from .._misc import move_column_to_front
 FIRST_OPTION_CORRECT = ord("A")
 FIRST_OPTION_INCORRECT = ord("a")
 
@@ -297,7 +297,14 @@ class Result(ANSObject):
             return []
 
     def get_submissions_df(self) -> pd.DataFrame:
-        return dataframe_from_list_of_dict([a._dict for a in self.submissions], nested=False).convert_dtypes()
+        lst = []
+        for p, a in enumerate(self.submissions):
+            d = a._dict
+            d["position"] = p
+            lst.append(d)
+
+        rtn = dataframe_from_list_of_dict(lst, nested=False).convert_dtypes()
+        return rtn.loc[:, ["position", "exercise_id", "question_id", "score", "raw_score", "adjustment", "auto_graded"]]
 
     def get_exercise_scores(self) -> List[Optional[float]]:
         return [a.score for a in self.submissions]
@@ -474,7 +481,7 @@ class Assignment(ANSObject):
                        "grade": r.grade,
                        "total_points": r.total_points,
                        "questions": r.get_binary_score_string(),
-                        "course_name": cname}
+                       "course_name": cname}
                 data.append(row)
 
             rtn = pd.DataFrame(data).convert_dtypes()
@@ -483,6 +490,28 @@ class Assignment(ANSObject):
                 rtn.total_points = pd.to_numeric(rtn.total_points)
 
             return rtn
+
+
+    def submissions_dataframe(self) -> pd.DataFrame:
+        tmp = []
+        for r in self.results:
+            df = r.get_submissions_df()
+            df["assignment_id"] = self.id
+            if len(r.users) > 0:
+                df["stud"] = r.users[0]["student_number"]
+            else:
+                df["stud"] = -1
+
+            code, _, _ = self.course_info()
+            df["course_code"] = code
+            tmp.append(df)
+        try:
+            rtn = pd.concat(tmp, axis=0, ignore_index=True)
+        except ValueError:
+            return pd.DataFrame()
+        rtn = move_column_to_front(rtn, "assignment_id")
+        rtn = move_column_to_front(rtn, "stud")
+        return rtn
 
     def course_info(self) -> Tuple[str,str,str]:
         if isinstance(self.course, Course):

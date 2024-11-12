@@ -40,3 +40,20 @@ def init_logging():
 # logging.warning(l)
 # logging.error(l)
 # logging.info(l)
+
+
+def move_column_to_front(df, column_name):
+    """
+    Moves the specified column to the first position in the DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame to modify.
+    column_name (str): The name of the column to move.
+
+    Returns:
+    pd.DataFrame: A new DataFrame with the column moved to the first position.
+    """
+    if column_name not in df.columns:
+        raise ValueError(f"Column '{column_name}' not found in DataFrame")
+
+    return df[[column_name] + [col for col in df.columns if col != column_name]]

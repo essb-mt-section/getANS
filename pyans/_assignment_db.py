@@ -76,6 +76,11 @@ class AssignmentDB(object):
 
         return rtn
 
+    def submissions_df(self) -> pd.DataFrame:
+        rtn = [ass.submissions_dataframe() for ass in self._assignments]
+        return pd.concat(rtn, axis=0, ignore_index=True)
+
+
     def questions_df(self) -> pd.DataFrame:
         tmp = []
         for ass in self._assignments:

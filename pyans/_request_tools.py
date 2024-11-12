@@ -28,7 +28,7 @@ class MaxRequestsError(object):
 
     @property
     def wait_seconds(self) -> int:
-        return int(self.headers["RateLimit-Reset"])
+        return int(self.headers["ratelimit-reset"])
 
 class Cache(object):
 

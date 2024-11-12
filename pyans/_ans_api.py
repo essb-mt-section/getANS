@@ -10,7 +10,7 @@ from ._misc import flatten, init_logging, make_date, print_feedback
 from .types import (Assignment, Course, Exercise, InsightsAssignment,
                     InsightsQuestion, Question, Result)
 
-DEFAULT_N_THREADS = 20
+DEFAULT_N_THREADS = 8
 INTERMEDIATE_SAVE = 300
 
 class ANSApi(object):
