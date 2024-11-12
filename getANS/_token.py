@@ -4,7 +4,7 @@ from appdirs import user_config_dir
 DIR = user_config_dir(appname="ans_token")
 FILE = os.path.join(DIR, "token")
 
-NO_TOKEN_ERROR_MSG = f"No ANS token found. Set token file via token.set() [or cli()] and call api_init_token(). Alternatively, call cli via command line 'python -m getans.token'"
+NO_TOKEN_ERROR_MSG = f"No ANS token found. Set token file via token.set() [or cli()] and call api_init_token(). Alternatively, call cli via command line 'python -m getANS.token'"
 
 INFO="""
 Accessing ANS with getiANS requires authorization via an access token. Please copy

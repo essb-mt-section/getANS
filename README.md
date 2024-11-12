@@ -1,4 +1,4 @@
-# getans
+# getANS
 
 Retrieving Data from ANS with Python
 
@@ -17,12 +17,12 @@ Python 3.10 and the following libraries:
 
 ---
 
-## getans Command line interface
+## getANS Command line interface
 
-call: `python -m getans`
+call: `python -m getANS`
 
 ```
-usage: getans [-h] [--usage] [--token] [--new [DATABASE_NAME]] [--exercises] [--results] [--submissions] [--courses] [--grades] [--assignments]
+usage: getANS [-h] [--usage] [--token] [--new [DATABASE_NAME]] [--exercises] [--results] [--submissions] [--courses] [--grades] [--assignments]
                   [--file [EXCEL_FILE]]
                   [DATABASE]
 
@@ -75,7 +75,7 @@ https://ans.app/users/tokens
 
 ---
 
-## getans Python library
+## getANS Python library
 
 API documentation is work in progress
 
