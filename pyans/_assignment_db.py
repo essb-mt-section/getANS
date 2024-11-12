@@ -76,8 +76,8 @@ class AssignmentDB(object):
 
         return rtn
 
-    def submissions_df(self) -> pd.DataFrame:
-        rtn = [ass.submissions_dataframe() for ass in self._assignments]
+    def submissions_df(self, n_choices:int=0) -> pd.DataFrame:
+        rtn = [ass.submissions_dataframe(n_choices) for ass in self._assignments]
         return pd.concat(rtn, axis=0, ignore_index=True)
 
 
@@ -226,8 +226,7 @@ class AssignmentDB(object):
             self.save()
 
         if scores:
-            api.downland_scores(self._assignments,
-                                        force_update=force_update)
+            api.downland_scores(self._assignments, force_update=force_update)
             self.save()
 
 def load_db(filename) -> AssignmentDB:

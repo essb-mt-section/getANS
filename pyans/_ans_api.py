@@ -13,19 +13,20 @@ from .types import (Assignment, Course, Exercise, InsightsAssignment,
 DEFAULT_N_THREADS = 8
 INTERMEDIATE_SAVE = 300
 
+
 class ANSApi(object):
 
     URL = "https://ans.app/api/v2/"
     SAVE_INTERVALL = 10
 
-    def __init__(self, n_threads:int = DEFAULT_N_THREADS):
+    def __init__(self, n_threads: int = DEFAULT_N_THREADS):
         self._save_callback_fnc = None
         self.__auth_header = None
         self._n_threads = 1
         self.feedback_queue = None
         self.cache = rt.Cache()
 
-        self.n_threads  = n_threads
+        self.n_threads = n_threads
         self.init_token()
         init_logging()
 
@@ -34,7 +35,7 @@ class ANSApi(object):
         return self._n_threads
 
     @n_threads.setter
-    def n_threads(self, val:int):
+    def n_threads(self, val: int):
         if val < 1:
             val = 1
         self._n_threads = val
@@ -56,11 +57,10 @@ class ANSApi(object):
         if self.__auth_header is None:
             raise RuntimeError(_token.NO_TOKEN_ERROR_MSG)
 
-
     @staticmethod
     def make_url(what, query_txt="",
-                  page:Optional[int]=None,
-                  items:Optional[int]=100) -> str:
+                 page: Optional[int] = None,
+                 items: Optional[int] = 100) -> str:
         """if getting multiple items (see ANS API doc) define items and page
         """
         if isinstance(items, int) and isinstance(page, int):
@@ -68,7 +68,7 @@ class ANSApi(object):
 
         url = ANSApi.URL + what
         if len(query_txt):
-            if url.find("?")>0:
+            if url.find("?") > 0:
                 # question separator already in url -> use &
                 sep = "&"
             else:
@@ -80,7 +80,7 @@ class ANSApi(object):
     def save_callback_fnc(self, fnc):
         self._save_callback_fnc = fnc
 
-    def  _save_intermediate(self):
+    def _save_intermediate(self):
         # intermediate save, if save_callback_fnc is defined
         if isinstance(self._save_callback_fnc, Callable):
             self._save_callback_fnc()
@@ -92,14 +92,14 @@ class ANSApi(object):
         """
         self._check_token()
         rtn = rt.wait_request_json(url, headers=self.__auth_header,
-                    ignore_http_error=ignore_http_error)
+                                   ignore_http_error=ignore_http_error)
         if rtn is not None:
             self.cache.add(url, rtn)
         return rtn
 
-    def get_multiple_pages(self, what, query_txt:str="",
-                           items:int=100,
-                           start_page_counter:int=1) -> List[Dict]:
+    def get_multiple_pages(self, what, query_txt: str = "",
+                           items: int = 100,
+                           start_page_counter: int = 1) -> List[Dict]:
         """Returns the result of a multiple pages request
             - all pages (from start cnt) of a multiple item request
 
@@ -113,34 +113,33 @@ class ANSApi(object):
 
         self._check_token()
         rtn_lists = []
-        page_cnt = start_page_counter -1
+        page_cnt = start_page_counter - 1
 
         while True:
             page_cnt = page_cnt + 1
             url = ANSApi.make_url(what=what, items=items, page=page_cnt,
-                                 query_txt=query_txt)
+                                  query_txt=query_txt)
 
             new_list = self.cache.get(url)
             if new_list is None:
                 # retrieve online
                 new_list = self.get(url)
 
-            if new_list is None or len(new_list)==0:
-                break # end request loop, because nothing received
+            if new_list is None or len(new_list) == 0:
+                break  # end request loop, because nothing received
             else:
-                if new_list in rtn_lists :
-                    break # end request loop, because new list has already been received
+                if new_list in rtn_lists:
+                    break  # end request loop, because new list has already been received
 
                 rtn_lists.append(new_list)
                 if len(new_list) < items:
-                    break # end request loop, because less items than requested
+                    break  # end request loop, because less items than requested
 
         return flatten(rtn_lists)
 
-
     def find_assignments(self,
-                         start_date:Union[str, date],
-                         end_date:Union[str, date]) -> List[Assignment]:
+                         start_date: Union[str, date],
+                         end_date: Union[str, date]) -> List[Assignment]:
         oneday = timedelta(days=1)
         if not isinstance(start_date, date):
             start_date = make_date(start_date)
@@ -152,41 +151,41 @@ class ANSApi(object):
         self._feedback(f"retrieving assignments: {period}")
 
         assignments = self.get_multiple_pages(what="search/assignments",
-                                   query_txt=period)
+                                              query_txt=period)
         self._feedback("  found {} assignments".format(len(assignments)))
         return [Assignment(d) for d in assignments]
 
-
-    def download_course_info(self, assignments:Union[Assignment, List[Assignment]],
-                                feedback=True)-> None:
+    def download_course_info(self, assignments: Union[Assignment, List[Assignment]],
+                             feedback=True) -> None:
         if isinstance(assignments, Assignment):
-            assignments = [assignments] #force list
+            assignments = [assignments]  # force list
         # make urls
         urls = []
         for ass in assignments:
-                cid = ass.dict["course_id"] # type: ignore
-                urls.append(ANSApi.make_url(what=f"courses/{cid}"))
+            cid = ass.dict["course_id"]  # type: ignore
+            urls.append(ANSApi.make_url(what=f"courses/{cid}"))
 
         responses = self._get_multiprocessing(urls)
 
         fcnt = 0
         l = len(assignments)
         for ass, rsp in zip(assignments, responses):
-            ass.course= Course(rsp)
+            ass.course = Course(rsp)
             if feedback:
                 fcnt = fcnt + 1
                 self._feedback(f" ({fcnt}/{l}) {ass.formated_label()}")
 
-    def download_results(self, assignments:Union[Assignment, List[Assignment]],
-                        force_update:bool=False) -> None:
+    def download_results(self, assignments: Union[Assignment, List[Assignment]],
+                         force_update: bool = False) -> None:
 
         # downloads results and writes it to assignment
         if isinstance(assignments, Assignment):
-            assignments = [assignments] #force list
+            assignments = [assignments]  # force list
 
         if not force_update:
             # filter list (only those without responses)
-            assignment_list = [ass for ass in assignments if ass.results_undefined ]
+            assignment_list = [
+                ass for ass in assignments if ass.results_undefined]
         else:
             assignment_list = assignments
 
@@ -202,9 +201,9 @@ class ANSApi(object):
         while True:
             j = i + chunck_size
             responses = self._get_multiprocessing_multipages(
-                                    what_list=what_list[i:j],
-                                    items=100,
-                                    feedback_list=feedback_list[i:j])
+                what_list=what_list[i:j],
+                items=100,
+                feedback_list=feedback_list[i:j])
 
             for ass, rsp in zip(assignment_list[i:j], responses):
                 ass.results = [Result(obj) for obj in rsp]
@@ -213,16 +212,16 @@ class ANSApi(object):
             if i > len(assignment_list)-1:
                 break
 
-
-    def download_assignment_insights(self, assignments:Union[Assignment, List[Assignment]],
-                        force_update:bool=False, feedback=True) -> None:
+    def download_assignment_insights(self, assignments: Union[Assignment, List[Assignment]],
+                                     force_update: bool = False, feedback=True) -> None:
 
         if isinstance(assignments, Assignment):
-            assignments = [assignments] #force list
+            assignments = [assignments]  # force list
 
         if not force_update:
             # filter list (only those without responses)
-            assignment_list = [ass for ass in assignments if ass.insights is None ]
+            assignment_list = [
+                ass for ass in assignments if ass.insights is None]
         else:
             assignment_list = assignments
 
@@ -240,20 +239,19 @@ class ANSApi(object):
                                               feedback_list=feedback)
 
         for ass, rsp in zip(assignments, responses):
-            ass.insights= InsightsAssignment(rsp)
-
-
+            ass.insights = InsightsAssignment(rsp)
 
     def download_exercises_and_questions(self,
-                                assignments:Union[Assignment, List[Assignment]],
-                                force_update:bool=False)-> None:
+                                         assignments: Union[Assignment, List[Assignment]],
+                                         force_update: bool = False) -> None:
         # downloads results and writes it to assignment
         if isinstance(assignments, Assignment):
-            assignments = [assignments] #force list
+            assignments = [assignments]  # force list
 
         if not force_update:
             # filter list (only those without responses)
-            assignment_list = [ass for ass in assignments if len(ass.exercises) == 0]
+            assignment_list = [
+                ass for ass in assignments if len(ass.exercises) == 0]
         else:
             assignment_list = assignments
 
@@ -262,31 +260,31 @@ class ANSApi(object):
         for c, ass in enumerate(assignment_list):
             r = self.get_multiple_pages(what=f"assignments/{ass.id}/exercises")
             if len(r):
-                self._feedback(f"[{len(r)} exercises] {c}/{n_ass}   {ass.dict['name']}")
+                self._feedback(
+                    f"[{len(r)} exercises] {c}/{n_ass}   {ass.dict['name']}")
                 ass.exercises = [Exercise(obj) for obj in r]
-                self._download_questions(ass.exercises) # multi thread
+                self._download_questions(ass.exercises)  # multi thread
             if time() - last_save > ANSApi.SAVE_INTERVALL:
                 self._save_intermediate()
                 last_save = time()
 
-    def _download_questions(self, exercises:Union[Exercise, List[Exercise]]):
+    def _download_questions(self, exercises: Union[Exercise, List[Exercise]]):
         if isinstance(exercises, Exercise):
-            exercises = [exercises] #force list
+            exercises = [exercises]  # force list
         urls = []
         for obj in exercises:
             urls.append(ANSApi.make_url(
-                            what=f"exercises/{obj.id}/questions",
-                            items=50, page=1)) # should be enough questions per exercise
+                what=f"exercises/{obj.id}/questions",
+                items=50, page=1))  # should be enough questions per exercise
         responses = self._get_multiprocessing(urls)
         for obj, rsp in zip(exercises, responses):
             obj.questions = [Question(obj) for obj in rsp]
 
-
     def download_question_insights(self,
-                                assignments:Union[Assignment, List[Assignment]],
-                                force_update:bool=False)-> None:
+                                   assignments: Union[Assignment, List[Assignment]],
+                                   force_update: bool = False) -> None:
         if isinstance(assignments, Assignment):
-            assignments = [assignments] #force list
+            assignments = [assignments]  # force list
 
         # make urls
         urls = []
@@ -295,25 +293,27 @@ class ANSApi(object):
             for ex in quest.exercises:
                 for quest in ex.questions:
                     if quest.insights_undefined or force_update:
-                        urls.append(ANSApi.make_url(what=f"insights/questions/{quest.id}"))
+                        urls.append(ANSApi.make_url(
+                            what=f"insights/questions/{quest.id}"))
                         questions.append(quest)
 
         n_quest = len(questions)
-        feedback_lst = [f"[question insights] {cnt+1}/{n_quest}" for cnt in range(n_quest)]
+        feedback_lst = [
+            f"[question insights] {cnt+1}/{n_quest}" for cnt in range(n_quest)]
         responses = self._get_multiprocessing(urls, ignore_http_error=False,
-                                              feedback_list=feedback_lst) # type: ignore
+                                              feedback_list=feedback_lst)  # type: ignore
         for quest, rsp in zip(questions, responses):
-            quest.insights= InsightsQuestion(rsp)
+            quest.insights = InsightsQuestion(rsp)
 
     def download_submissions_and_student_info(self,
-                        assignments:Union[Assignment, List[Assignment]],
-                        force_update:bool=False)-> None:
+                                              assignments: Union[Assignment, List[Assignment]],
+                                              force_update: bool = False) -> None:
         # downloads submissions and student information
 
         if isinstance(assignments, Assignment):
-            assignments = [assignments] #force list
+            assignments = [assignments]  # force list
 
-        #collect all incomplete results make urls and feedback
+        # collect all incomplete results make urls and feedback
         result_list = []
         feedback_list = []
         urls = []
@@ -323,7 +323,7 @@ class ANSApi(object):
                     result_list.append(res)
                     urls.append(ANSApi.make_url(what=f"results/{res.id}"))
                     feedback_list.append(
-                        f"assignment {cnt_ass+1}/{len(assignments)}" + \
+                        f"assignment {cnt_ass+1}/{len(assignments)}" +
                         f" - result {cnt_res+1}/{len(ass.results)}")
         for i, fb in enumerate(feedback_list):
             feedback_list[i] = f"[result submissions] {i+1}/{len(feedback_list)} " + fb
@@ -332,7 +332,8 @@ class ANSApi(object):
         i = 0
         while True:
             j = i + chunck_size
-            responses = self._get_multiprocessing(urls[i:j], feedback_list=feedback_list[i:j])
+            responses = self._get_multiprocessing(
+                urls[i:j], feedback_list=feedback_list[i:j])
             for res, rsp in zip(result_list[i:j], responses):
                 res.update(rsp)
             self._save_intermediate()
@@ -340,13 +341,10 @@ class ANSApi(object):
             if i > len(result_list)-1:
                 break
 
-
-    def downland_scores(self,
-                                assignments:Union[Assignment, List[Assignment]],
-                                force_update=False,
-                                additional_feedback="")-> None:
+    def downland_scores(self, assignments: Union[Assignment, List[Assignment]],
+                        force_update=False) -> None:
         if isinstance(assignments, Assignment):
-            assignments = [assignments] #force list
+            assignments = [assignments]  # force list
 
         result_list = []
         feedback_list = []
@@ -356,11 +354,12 @@ class ANSApi(object):
                 for cnt_sub, sub in enumerate(res.submissions):
                     if force_update or not sub.has_scores():
                         result_list.append(sub)
-                        urls.append(ANSApi.make_url(what=f"submissions/{sub.id}"))
+                        urls.append(ANSApi.make_url(
+                            what=f"submissions/{sub.id}"))
                         feedback_list.append(
-                        f"ass {cnt_ass+1}/{len(assignments)}" + \
-                        f" - res {cnt_res+1}/{len(ass.results)}" + \
-                        f" - submission {cnt_sub+1}")
+                            f"ass {cnt_ass+1}/{len(assignments)}" +
+                            f" - res {cnt_res+1}/{len(ass.results)}" +
+                            f" - submission {cnt_sub+1}")
         for i, fb in enumerate(feedback_list):
             feedback_list[i] = f"[result answer details] {i+1}/{len(feedback_list)} " + fb
 
@@ -368,7 +367,8 @@ class ANSApi(object):
         i = 0
         while True:
             j = i + chunck_size
-            responses = self._get_multiprocessing(urls[i:j], feedback_list=feedback_list[i:j])
+            responses = self._get_multiprocessing(
+                urls[i:j], feedback_list=feedback_list[i:j])
             for sub, rsp in zip(result_list[i:j], responses):
                 sub.update(rsp)
             self._save_intermediate()
@@ -393,9 +393,9 @@ class ANSApi(object):
 
 #        result.submissions = [Submission(obj) for obj in submission_dicts]
 
-    def _get_multiprocessing(self, url_list:List[str],
-                                ignore_http_error=False,
-                                feedback_list:Optional[List[Optional[str]]]=None):
+    def _get_multiprocessing(self, url_list: List[str],
+                             ignore_http_error=False,
+                             feedback_list: Optional[List[Optional[str]]] = None):
         # helper function to download from ANS
         # returns response that belong to the url_list
 
@@ -406,7 +406,7 @@ class ANSApi(object):
         else:
             feedback = feedback_list
 
-        if self._n_threads<2:
+        if self._n_threads < 2:
             # single thread
             for url, fb in zip(url_list, feedback):
                 rsp = self.cache.get(url)
@@ -420,8 +420,8 @@ class ANSApi(object):
         else:
             # multi thread
             proc_manager = rt.RequestProcessManager(self.cache,
-                                             max_processes=self._n_threads)
-            rtn_dict = {} # use dict, because response come in unpredicted order
+                                                    max_processes=self._n_threads)
+            rtn_dict = {}  # use dict, because response come in unpredicted order
             i = -1
             for url, fb in zip(url_list, feedback):
                 i = i+1
@@ -433,8 +433,8 @@ class ANSApi(object):
                 if rsp is None:
                     # try retrieve online (add the thread list)
                     proc_manager.add(who=i,
-                        thread=rt.RequestProcess(url, headers=self.__auth_header,
-                                                 ignore_http_error=ignore_http_error))
+                                     thread=rt.RequestProcess(url, headers=self.__auth_header,
+                                                              ignore_http_error=ignore_http_error))
                 else:
                     # from cache
                     rtn_dict[i] = rsp
@@ -459,9 +459,9 @@ class ANSApi(object):
 
         return rtn
 
-    def _get_multiprocessing_multipages(self, what_list:List[str],
-                                        items:int=100,
-                                        feedback_list:Optional[List[Optional[str]]]=None):
+    def _get_multiprocessing_multipages(self, what_list: List[str],
+                                        items: int = 100,
+                                        feedback_list: Optional[List[Optional[str]]] = None):
         # helper function to download from ANS
         # returns response that belong to the url_list
 
@@ -472,7 +472,7 @@ class ANSApi(object):
         else:
             feedback = feedback_list
 
-        if self._n_threads<2:
+        if self._n_threads < 2:
             # single thread
             for what, fb in zip(what_list, feedback):
                 rsp = self.get_multiple_pages(what=what, items=items)
@@ -483,21 +483,22 @@ class ANSApi(object):
         else:
             # multi thread
             proc_manager = rt.RequestProcessManager(self.cache,
-                                             max_processes=self._n_threads)
-            rtn_dict = {} # use dict, because response come in unpredicted order
+                                                    max_processes=self._n_threads)
+            rtn_dict = {}  # use dict, because response come in unpredicted order
             i = -1
             for what, fb in zip(what_list, feedback):
                 i = i + 1
                 if i % INTERMEDIATE_SAVE == INTERMEDIATE_SAVE-1:
                     self._save_intermediate()
-                url = self.make_url(what=what) + f"?items={items}" + "&page={{cnt:1}}"
+                url = self.make_url(what=what) + \
+                    f"?items={items}" + "&page={{cnt:1}}"
                 rsp = self.cache.get(url)
                 if fb is not None:
                     self._feedback(fb)
                 if rsp is None:
                     # try retrieve online (add the thread list)
                     proc_manager.add(who=i,
-                        thread=rt.MultiplePagesRequestProcess(url, headers=self.__auth_header))
+                                     thread=rt.MultiplePagesRequestProcess(url, headers=self.__auth_header))
                 else:
                     # from cache
                     rtn_dict[i] = rsp
@@ -522,6 +523,5 @@ class ANSApi(object):
 
         return rtn
 
-
-    def _feedback(self, txt:str) ->None:
-         print_feedback(txt, self.feedback_queue)
+    def _feedback(self, txt: str) -> None:
+        print_feedback(txt, self.feedback_queue)
