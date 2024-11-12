@@ -1,7 +1,7 @@
 """Retrieving Data from ANS for DPECS
 """
 
-__version__ = "0.9-dev1"
+__version__ = "0.9"
 __author__ = 'Oliver Lindemann'
 
 
