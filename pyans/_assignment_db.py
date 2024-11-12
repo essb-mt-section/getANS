@@ -103,7 +103,7 @@ class AssignmentDB(object):
                 for r in ass.results:
                     n_resp += 1
                     if r.submissions is not None:
-                        for s in r.submissions:
+                        for _ in r.submissions:
                             n_submissions += 1
                             #if s.scores is not None:
                             #    n_answer_details += 1

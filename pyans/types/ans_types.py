@@ -345,7 +345,7 @@ class Result(ANSObject):
     def update(self, dict_: dict)-> None:
         self._dict = dict_
         if "submissions" in self._dict:
-            self._submissions = [Submission(obj) for obj in self._dict["submissions"]]
+            self.submissions = [Submission(obj) for obj in self._dict["submissions"]]
 
     def has_answer_details(self) -> bool:
         try:
