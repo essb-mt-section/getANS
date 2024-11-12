@@ -227,6 +227,8 @@ class AssignmentDB(object):
 
         if answer_details:
             ##TODO answer_details not yet implemented
+            api.downland_answer_details(self._assignments,
+                                        force_update=force_update)
             self.save()
 
 

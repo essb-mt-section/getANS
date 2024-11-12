@@ -341,26 +341,57 @@ class ANSApi(object):
                 break
 
 
-    def downland_answer_details(self, result, force_update=False,
+    def downland_answer_details(self,
+                                assignments:Union[Assignment, List[Assignment]],
+                                force_update=False,
                                 additional_feedback="")-> None:
-        #TODO answer_details not yet implemented
-        assert isinstance(result, Result)
-        if not force_update and result.has_answer_details():
-            return
+        if isinstance(assignments, Assignment):
+            assignments = [assignments] #force list
 
-        # # get submission details (which answer) parallel
-        # self._feedback("[answer details] {} {}".format(result.id, additional_feedback))
-        # urls = [ANSApi.make_url(what="submissions/{}".format(s["id"])) \
-        #                 for s in result.dict["submissions"]]
-        # headers = [self.__auth_header] * len(urls)
-        # submission_dicts = []
-        # for r in Pool().map(rt.map_get_fnc, zip(urls, headers)):
-        #     try:
-        #         submission_dicts.append(r.json())
-        #     except JSONDecodeError:
-        #         r.raise_for_status()
+        result_list = []
+        feedback_list = []
+        urls = []
+        for cnt_ass, ass in enumerate(assignments):
+            for cnt_res, res in enumerate(ass.results):
+                for cnt_sub, sub in enumerate(res.submissions):
+                    if force_update or not sub.has_scores():
+                        result_list.append(sub)
+                        urls.append(ANSApi.make_url(what=f"submissions/{sub.id}"))
+                        feedback_list.append(
+                        f"ass {cnt_ass+1}/{len(assignments)}" + \
+                        f" - res {cnt_res+1}/{len(ass.results)}" + \
+                        f" - submission {cnt_sub+1}")
+        for i, fb in enumerate(feedback_list):
+            feedback_list[i] = f"[result answer details] {i+1}/{len(feedback_list)} " + fb
 
-        # result.submissions = [Submission(obj) for obj in submission_dicts]
+        chunck_size = 100
+        i = 0
+        while True:
+            j = i + chunck_size
+            responses = self._get_multiprocessing(urls[i:j], feedback_list=feedback_list[i:j])
+            for sub, rsp in zip(result_list[i:j], responses):
+                sub.update(rsp)
+            self._save_intermediate()
+            i = j
+            if i > len(result_list)-1:
+                break
+
+
+#        # get submission details (which answer) parallel
+#        self._feedback("[answer details] {} {}".format(result.id, additional_feedback))
+#        urls = [ANSApi.make_url(what="submissions/{}".format(s["id"])) \
+#                        for s in result.dict["submissions"]]
+#        print(urls)
+#        exit()
+#        headers = [self.__auth_header] * len(urls)
+#        submission_dicts = []
+#        for r in Pool().map(rt.map_get_fnc, zip(urls, headers)):
+#            try:
+#                submission_dicts.append(r.json())
+#            except JSONDecodeError:
+#                r.raise_for_status()
+
+#        result.submissions = [Submission(obj) for obj in submission_dicts]
 
     def _get_multiprocessing(self, url_list:List[str],
                                 ignore_http_error=False,

@@ -206,13 +206,13 @@ class Submission(ANSObject):
         except (KeyError, ValueError, TypeError):
             return None
 
-    def contains_all_choices(self) -> bool:
+    def has_scores(self) -> bool:
         # all scores of the MC options
         return "scores" in self._dict
 
     @property
     def scores(self) -> Iterable[Dict[str, Any]]: # different MC options
-        if not self.contains_all_choices():
+        if not self.has_scores():
             return []
         elif self._sort_by is None:
             return iter(self._dict["scores"])
@@ -246,6 +246,8 @@ class Submission(ANSObject):
     def reset_scores_order(self) -> None:
         self._reset_ordering()
 
+    def update(self, dict_: dict)-> None:
+        self._dict = dict_
 
 
 class Result(ANSObject):
@@ -347,11 +349,6 @@ class Result(ANSObject):
         if "submissions" in self._dict:
             self.submissions = [Submission(obj) for obj in self._dict["submissions"]]
 
-    def has_answer_details(self) -> bool:
-        try:
-            return self._submissions[0].contains_all_choices()
-        except IndexError:
-            return False
 
 
 
