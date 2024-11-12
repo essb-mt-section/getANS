@@ -308,7 +308,7 @@ class Result(ANSObject):
                 ch = a.get_choices()
                 for i, col in enumerate(choice_cols):
                     try:
-                        resp = ch[i]
+                        resp = int(ch[i])
                     except IndexError:
                         resp = None
                     d[col] = resp
