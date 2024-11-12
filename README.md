@@ -1,10 +1,22 @@
 # getANS
 
+[![GitHub license](https://img.shields.io/github/license/essb-mt-section/getANS)](https://github.com/lindemann09/PyNSN/blob/master/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/pynsn?style=flat)](https://pypi.org/project/getANS/)
+
+
 Retrieving Data from ANS with Python
 
 Released under the MIT License
 
 Oliver Lindemann, Erasmus University Rotterdam, NL
+
+-- 
+
+## Installing via `pip`
+
+```
+python -m pip install getans
+```
 
 ---
 
