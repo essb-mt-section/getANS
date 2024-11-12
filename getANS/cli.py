@@ -29,7 +29,7 @@ Typical workflow:
 """
 
     parser = ArgumentParser(
-        prog = "pyans",
+        prog = "getANS",
         description = "Retrieving Data from ANS. " ,
         epilog=f"Version {__version__}, (c) Oliver Lindemann")
 

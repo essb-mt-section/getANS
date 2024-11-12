@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "pyans"
+name = "getANS"
 authors = [{name = "Oliver Lindemann", email = "lindemann@essb.eur.nl"}]
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -23,5 +23,5 @@ test = [
 #    "sphinx-rtd-theme"]
 
 [project.urls]
-Documentation = "https://github.com/essb-mt-section/PyANS"
-Source = "https://github.com/essb-mt-section/PyANS"
+Documentation = "https://github.com/essb-mt-section/getANS"
+Source = "https://github.com/essb-mt-section/getANS"
