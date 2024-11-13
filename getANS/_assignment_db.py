@@ -13,7 +13,8 @@ from . import _ans_api
 from ._misc import print_feedback
 from .types import Assignment, Course
 
-api = _ans_api.ANSApi() # global API instance
+api = _ans_api.ANSApi()  # global API instance
+
 
 class AssignmentDB(object):
 
@@ -32,7 +33,7 @@ class AssignmentDB(object):
     def assignments(self, val: Union[Iterator[Assignment], List[Assignment]]):
         self._assignments = list(val)
 
-    def dataframe(self, raw_dict:bool=False) -> pd.DataFrame:
+    def dataframe(self, raw_dict: bool = False) -> pd.DataFrame:
         tmp = []
         for ass in self._assignments:
             df = ass.dataframe(raw_ans_data=raw_dict)
@@ -56,8 +57,7 @@ class AssignmentDB(object):
         return pd.DataFrame({"code": codes,
                              "name": names})
 
-
-    def grades_df(self, raw_ans_data:bool=False) -> pd.DataFrame:
+    def grades_df(self, raw_ans_data: bool = False) -> pd.DataFrame:
         tmp = []
         for ass in self._assignments:
             df = ass.grades_dataframe(raw_ans_data=raw_ans_data)
@@ -66,7 +66,7 @@ class AssignmentDB(object):
         rtn = rtn.reset_index().drop(columns=["index"])
         return rtn
 
-    def assignments_df(self, raw_ans_data:bool=False) -> pd.DataFrame:
+    def assignments_df(self, raw_ans_data: bool = False) -> pd.DataFrame:
         tmp = []
         for ass in self._assignments:
             df = ass.dataframe(raw_ans_data=raw_ans_data)
@@ -76,10 +76,10 @@ class AssignmentDB(object):
 
         return rtn
 
-    def submissions_df(self, n_choices:int=0) -> pd.DataFrame:
-        rtn = [ass.submissions_dataframe(n_choices) for ass in self._assignments]
+    def submissions_df(self, n_choices: int = 0) -> pd.DataFrame:
+        rtn = [ass.submissions_dataframe(n_choices)
+               for ass in self._assignments]
         return pd.concat(rtn, axis=0, ignore_index=True)
-
 
     def questions_df(self) -> pd.DataFrame:
         tmp = []
@@ -112,7 +112,6 @@ class AssignmentDB(object):
                     n_exercises += 1
                     n_questions += len(ex.questions)
 
-
         d = {"assignments": len(self._assignments),
              "responses": n_resp,
              "exercises": n_exercises,
@@ -123,15 +122,15 @@ class AssignmentDB(object):
 
         return pd.DataFrame({"types": d.keys(), "n": d.values()})
 
-    def get_by_name(self, regexp:AnyStr,
-                                and_not_regexp:Optional[AnyStr]=None) -> Iterator[Assignment]:
+    def get_by_name(self, regexp: AnyStr,
+                    and_not_regexp: Optional[AnyStr] = None) -> Iterator[Assignment]:
         match = re.compile(regexp)
         if and_not_regexp is None:
-            flt_fnc = lambda x: match.search(x.dict["name"]) is not None
+            def flt_fnc(x): return match.search(x.dict["name"]) is not None
         else:
             not_match = re.compile(and_not_regexp)
-            flt_fnc = lambda x: match.search(x.dict["name"]) is not None and \
-                            not_match.search(x.dict["name"]) is None
+            def flt_fnc(x): return match.search(x.dict["name"]) is not None and \
+                not_match.search(x.dict["name"]) is None
 
         return filter(flt_fnc, self._assignments)
 
@@ -141,7 +140,7 @@ class AssignmentDB(object):
     def get_by_id(self, id) -> Iterator[Assignment]:
         return filter(lambda x: x.id == id, self._assignments)
 
-    def save(self, filename:Optional[str]=None, override:bool=False):
+    def save(self, filename: Optional[str] = None, override: bool = False):
         if isinstance(filename, str):
             if not filename.endswith(AssignmentDB.DB_SUFFIX):
                 filename = filename + AssignmentDB.DB_SUFFIX
@@ -151,11 +150,12 @@ class AssignmentDB(object):
                 while True:
                     if os.path.isfile(filename):
                         new_filename_needed = True
-                        filename = filename.removesuffix(AssignmentDB.DB_SUFFIX)
+                        filename = filename.removesuffix(
+                            AssignmentDB.DB_SUFFIX)
                         i = filename.rfind("_")
-                        if i>=0:
+                        if i >= 0:
                             try:
-                                cnt = int(filename[i+1:]) #number at the end
+                                cnt = int(filename[i+1:])  # number at the end
                                 filename = filename[:i]
                             except ValueError:
                                 cnt = 0
@@ -163,10 +163,11 @@ class AssignmentDB(object):
                             cnt = 0
                         filename = f"{filename}_{cnt+1}{AssignmentDB.DB_SUFFIX}"
                     else:
-                        break # filename OK
+                        break  # filename OK
 
                 if new_filename_needed:
-                    print(f" DB already exists. Create new database {filename}")
+                    print(
+                        f" DB already exists. Create new database {filename}")
 
             self.filename = filename
 
@@ -179,12 +180,11 @@ class AssignmentDB(object):
                 pass
             os.rename(self.filename + "~", self.filename)
 
-
     def initialize(self,
-              start_date:Union[str, date],
-              end_date:Union[str, date],
-              select_by_name:str,
-              feedback:bool = True):
+                   start_date: Union[str, date],
+                   end_date: Union[str, date],
+                   select_by_name: str,
+                   feedback: bool = True):
         """select_by_name: regular expression"""
         api.init_token()
         self.assignments = api.find_assignments(start_date=start_date,
@@ -194,40 +194,45 @@ class AssignmentDB(object):
         api.download_course_info(self.assignments, feedback=feedback)
 
     def retrieve(self,
-                results = False,
-                exercises = False,
-                submissions=False,
-                scores=False,
-                force_update = False,
-                _feedback_queue=None): # TODO dealing with feedback queue for GUI
+                 results=False,
+                 exercises=False,
+                 submissions=False,
+                 scores=False,
+                 force_update=False,
+                 _feedback_queue=None):  # TODO dealing with feedback queue for GUI
         # retrieve data if they do not exists
-        api.save_callback_fnc(self.save) # save while waiting
+        api.save_callback_fnc(self.save)  # save while waiting
         api.feedback_queue = _feedback_queue
 
+        print("Retrieving missing data")
+        new_data = False
         if results:
-            api.download_results(self._assignments,
-                                     force_update=force_update)
-            self.save()
-            api.download_assignment_insights(self._assignments,
-                                     force_update=force_update)
-            self.save()
+            print("-  results")
+            new_data = new_data | api.download_results(
+                    self._assignments, force_update=force_update)
+            new_data = new_data | api.download_assignment_insights(
+                    self._assignments, force_update=force_update)
 
         if exercises:
-            api.download_exercises_and_questions(self._assignments,
-                                                     force_update=force_update)
-            self.save()
-            api.download_question_insights(self._assignments,
-                                            force_update=force_update)
-            self.save()
+            print("-  exercises")
+            new_data = new_data | api.download_exercises_and_questions(
+                    self._assignments, force_update=force_update)
+            new_data = new_data | api.download_question_insights(
+                    self._assignments, force_update=force_update)
 
         if submissions:
-            api.download_submissions_and_student_info(self._assignments,
-                                        force_update=force_update)
-            self.save()
+            print("-  submissions")
+            new_data = new_data | api.download_submissions_and_student_info(
+                    self._assignments, force_update=force_update)
 
         if scores:
-            api.downland_scores(self._assignments, force_update=force_update)
+            print("-  scores")
+            new_data = new_data | api.downland_scores(
+                    self._assignments, force_update=force_update)
+
+        if new_data:
             self.save()
+
 
 def load_db(filename) -> AssignmentDB:
     print_feedback("Loading {}".format(filename))
